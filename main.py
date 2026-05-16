@@ -1,59 +1,54 @@
 import pandas as pd
 from datetime import datetime
 import os
-import sys
 
-# Use the nsemine library
+# Install and import the reliable nsefin library
 try:
-    from nsemine import nse
+    from nsefin import nse
 except ImportError:
-    print("nsemine not found, installing...")
-    os.system('pip install nsemine')
-    from nsemine import nse
+    print("Installing nsefin library...")
+    os.system('pip install nsefin')
+    from nsefin import nse
 
 def fetch_and_save_option_chain():
     """Fetches live NIFTY option chain and saves to a CSV file."""
     try:
-        print(f"🚀 Fetching NIFTY live data at {datetime.now()}...")
+        print(f"Fetching NIFTY data at {datetime.now()}...")
         
-        # Fetch option chain using nsemine's nse module
-        # The function returns a dictionary with keys 'CE' and 'PE'
-        option_chain = nse.option_chain("NIFTY")
+        # Use nsefin's get_option_chain method (returns a dictionary with 'CE' and 'PE')
+        option_chain = nse.get_option_chain("NIFTY")
         
-        if not option_chain:
-            raise ValueError("No data returned from nse.option_chain")
+        if not option_chain or ('CE' not in option_chain or 'PE' not in option_chain):
+            raise ValueError("No valid data returned from nse.get_option_chain")
         
-        # Extract Call and Put DataFrames
+        # Create DataFrames for Calls and Puts
         call_df = pd.DataFrame(option_chain['CE'])
         put_df = pd.DataFrame(option_chain['PE'])
         
-        # Add a column to identify option type
+        # Add identifiers
         call_df['option_type'] = 'CE'
         put_df['option_type'] = 'PE'
         
-        # Combine both into one DataFrame
+        # Combine the data
         combined_df = pd.concat([call_df, put_df], ignore_index=True)
         
-        # Add a timestamp for when the data was fetched
+        # Add a timestamp
         combined_df['fetch_timestamp'] = datetime.now().isoformat()
         
-        # Create filename with current timestamp
+        # Save the file with a timestamp
         filename = f"nifty_option_chain_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        
-        # Save to CSV
         combined_df.to_csv(filename, index=False)
-        print(f"✅ Real data saved to {filename} with {len(combined_df)} rows")
+        print(f"✅ Data saved to {filename} with {len(combined_df)} rows")
         
-        # Also save a latest copy (overwrite) for easy access
+        # Save a file for the latest data
         combined_df.to_csv("nifty_option_chain_latest.csv", index=False)
-        print("✅ Also saved as 'nifty_option_chain_latest.csv'")
+        print("✅ Latest copy saved to 'nifty_option_chain_latest.csv'")
         
     except Exception as e:
-        print(f"❌ An error occurred: {e}")
-        # Write error to a log file for debugging
+        print(f"An error occurred: {e}")
+        # Log the error for debugging
         with open("error_log.txt", "a") as f:
             f.write(f"{datetime.now()}: {str(e)}\n")
-        # Re-raise so the GitHub Action shows failure
         raise
 
 if __name__ == "__main__":
