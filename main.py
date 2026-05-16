@@ -6,7 +6,7 @@ date_obj = datetime.now()
 # Uncomment the line below to test with a known good date (e.g., a past Thursday)
 # date_obj = datetime(2026, 5, 14) 
 
-url = f"https://archives.nseindia.com/content/fo/fo{date_obj.strftime('%d%m%Y')}.zip"
+url = f"https://archives.nseindia.com/content/fo/fo{date_obj.strftime('14-05-2026')}.zip"
 print(f"Attempting to download: {url}")
 
 resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -25,7 +25,7 @@ if resp.status_code == 200 and resp.headers.get('content-type', '').startswith('
         print("❌ Error: The downloaded file is not a valid zip file.")
 else:
     # This will be the case on weekends and holidays
-    print(f"❌ No bhavcopy file available for {date_obj.strftime('%Y-%m-%d')}. (Markets are likely closed)")
+    print(f"❌ No bhavcopy file available for {date_obj.strftime('2025-05-14')}. (Markets are likely closed)")
     print(f"   Status code: {resp.status_code}, Content-Type: {resp.headers.get('content-type')}")
     # If you want to see what was returned, uncomment the next line:
     # print(resp.text[:500]) 
