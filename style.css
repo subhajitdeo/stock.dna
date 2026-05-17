@@ -1,4 +1,4 @@
-/* style.css - Modern Dark Fintech UI with Glassmorphism */
+/* style.css - Premium Dark Fintech UI with Glassmorphism & Smooth Animations */
 * {
     margin: 0;
     padding: 0;
@@ -18,12 +18,22 @@ body {
     margin: 0 auto;
 }
 
-/* Glassmorphic Header */
-.glass-header {
+/* ---------- Glassmorphic Elements ---------- */
+.glass-header, .chart-glass-card, .category-card, .recommendation-card, .ai-summary-card {
+    background: rgba(12, 20, 30, 0.55);
     backdrop-filter: blur(12px);
-    background: rgba(15, 25, 45, 0.55);
     border-radius: 2rem;
-    border: 1px solid rgba(72, 187, 255, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    transition: all 0.3s ease;
+}
+
+.glass-header:hover, .chart-glass-card:hover, .category-card:hover, .recommendation-card:hover, .ai-summary-card:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.glass-header {
     padding: 1rem 2rem;
     display: flex;
     flex-wrap: wrap;
@@ -31,7 +41,6 @@ body {
     align-items: center;
     gap: 1rem;
     margin-bottom: 2rem;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 
 .logo-area {
@@ -45,6 +54,7 @@ body {
 .logo-area i {
     color: #3b82f6;
     font-size: 1.8rem;
+    filter: drop-shadow(0 0 5px #3b82f6);
 }
 
 .accent {
@@ -60,6 +70,7 @@ body {
     letter-spacing: 0.5px;
 }
 
+/* Search */
 .search-wrapper {
     display: flex;
     gap: 0.75rem;
@@ -67,6 +78,12 @@ body {
     border-radius: 60px;
     padding: 0.3rem 0.3rem 0.3rem 1rem;
     border: 1px solid #2d3a5e;
+    transition: all 0.2s;
+}
+
+.search-wrapper:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
 }
 
 .search-wrapper input {
@@ -79,10 +96,6 @@ body {
     font-weight: 500;
 }
 
-.search-wrapper input::placeholder {
-    color: #8e9bb5;
-}
-
 .btn-primary {
     background: linear-gradient(135deg, #2563eb, #1e40af);
     border: none;
@@ -91,7 +104,7 @@ body {
     color: white;
     font-weight: 600;
     cursor: pointer;
-    transition: 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -100,20 +113,14 @@ body {
 
 .btn-primary:hover {
     transform: scale(1.02);
-    background: linear-gradient(135deg, #3b82f6, #1e3a8a);
-    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    box-shadow: 0 4px 15px rgba(37,99,235,0.4);
 }
 
-/* Chart Glass Card */
+/* Chart Card */
 .chart-glass-card {
-    background: rgba(12, 20, 30, 0.65);
-    backdrop-filter: blur(10px);
-    border-radius: 1.8rem;
-    border: 1px solid rgba(59,130,246,0.25);
     padding: 1.2rem;
     margin-bottom: 2rem;
     position: relative;
-    transition: all 0.2s;
 }
 
 .chart-header {
@@ -145,14 +152,15 @@ body {
     overflow: hidden;
 }
 
+/* Loading Overlay */
 .loading-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -160,6 +168,7 @@ body {
     border-radius: 1.8rem;
     z-index: 20;
     gap: 1rem;
+    animation: fadeIn 0.2s;
 }
 
 .spinner {
@@ -174,6 +183,11 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .hidden {
@@ -209,12 +223,12 @@ body {
 }
 
 .category-card, .recommendation-card, .ai-summary-card {
-    background: rgba(8, 16, 28, 0.7);
-    backdrop-filter: blur(8px);
-    border-radius: 1.5rem;
-    border: 1px solid rgba(59, 130, 246, 0.3);
     padding: 1.2rem;
-    transition: transform 0.2s;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.category-card:hover, .recommendation-card:hover, .ai-summary-card:hover {
+    transform: translateY(-3px);
 }
 
 .cat-header {
@@ -241,6 +255,18 @@ body {
     font-size: 0.85rem;
     padding: 0.3rem 0;
     border-bottom: 1px dashed #1e2a44;
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .indicator-name {
@@ -254,6 +280,11 @@ body {
     border-radius: 30px;
     font-size: 0.7rem;
     letter-spacing: 0.3px;
+    transition: transform 0.1s;
+}
+
+.signal-badge:hover {
+    transform: scale(1.05);
 }
 
 .buy { background: #10b98120; color: #34d399; border: 1px solid #10b981; }
@@ -272,6 +303,12 @@ body {
     font-weight: 800;
     margin: 0.8rem 0;
     letter-spacing: 1px;
+    animation: pulse 1s ease;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .strength-meter-wrapper {
@@ -295,7 +332,7 @@ body {
     height: 100%;
     background: linear-gradient(90deg, #3b82f6, #a855f7);
     border-radius: 30px;
-    transition: width 0.5s ease;
+    transition: width 0.6s cubic-bezier(0.22, 0.97, 0.36, 1.02);
 }
 
 .signal-stats {
