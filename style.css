@@ -1,0 +1,313 @@
+/* style.css - Modern Dark Fintech UI with Glassmorphism */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
+    font-family: 'Inter', sans-serif;
+    color: #eef2ff;
+    padding: 1.5rem;
+    min-height: 100vh;
+}
+
+.app-container {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Glassmorphic Header */
+.glass-header {
+    backdrop-filter: blur(12px);
+    background: rgba(15, 25, 45, 0.55);
+    border-radius: 2rem;
+    border: 1px solid rgba(72, 187, 255, 0.2);
+    padding: 1rem 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.logo-area i {
+    color: #3b82f6;
+    font-size: 1.8rem;
+}
+
+.accent {
+    color: #3b82f6;
+}
+
+.badge {
+    font-size: 0.7rem;
+    background: #1e2a4a;
+    padding: 0.2rem 0.7rem;
+    border-radius: 30px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.search-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 60px;
+    padding: 0.3rem 0.3rem 0.3rem 1rem;
+    border: 1px solid #2d3a5e;
+}
+
+.search-wrapper input {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 0.9rem;
+    width: 260px;
+    outline: none;
+    font-weight: 500;
+}
+
+.search-wrapper input::placeholder {
+    color: #8e9bb5;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border: none;
+    padding: 0.6rem 1.4rem;
+    border-radius: 40px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.btn-primary:hover {
+    transform: scale(1.02);
+    background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+}
+
+/* Chart Glass Card */
+.chart-glass-card {
+    background: rgba(12, 20, 30, 0.65);
+    backdrop-filter: blur(10px);
+    border-radius: 1.8rem;
+    border: 1px solid rgba(59,130,246,0.25);
+    padding: 1.2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
+}
+
+.symbol-title {
+    font-weight: 700;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #ffffff, #93c5fd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.chart-badge {
+    background: #1e293b;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+#chartContainer {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 1.8rem;
+    z-index: 20;
+    gap: 1rem;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #2c3e66;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 1000px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .search-wrapper input {
+        width: 180px;
+    }
+}
+
+.indicators-panel {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 700px) {
+    .indicators-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+.category-card, .recommendation-card, .ai-summary-card {
+    background: rgba(8, 16, 28, 0.7);
+    backdrop-filter: blur(8px);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 1.2rem;
+    transition: transform 0.2s;
+}
+
+.cat-header {
+    font-weight: 600;
+    font-size: 1rem;
+    border-left: 3px solid #3b82f6;
+    padding-left: 0.6rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.indicators-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.indicator-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed #1e2a44;
+}
+
+.indicator-name {
+    font-weight: 500;
+    color: #bfd9ff;
+}
+
+.signal-badge {
+    font-weight: 700;
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    letter-spacing: 0.3px;
+}
+
+.buy { background: #10b98120; color: #34d399; border: 1px solid #10b981; }
+.strong-buy { background: #04785730; color: #6ee7b7; border: 1px solid #059669; }
+.sell { background: #ef444420; color: #f87171; border: 1px solid #ef4444; }
+.strong-sell { background: #b91c1c30; color: #fca5a5; border: 1px solid #dc2626; }
+.neutral { background: #47556930; color: #cbd5e1; border: 1px solid #6b7280; }
+
+.recommendation-card {
+    text-align: center;
+    margin-bottom: 1.2rem;
+}
+
+.final-recommendation {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0.8rem 0;
+    letter-spacing: 1px;
+}
+
+.strength-meter-wrapper {
+    margin: 1rem 0;
+}
+
+.meter-label {
+    font-size: 0.8rem;
+    margin-bottom: 0.3rem;
+}
+
+.meter-bar-bg {
+    background: #1e293b;
+    border-radius: 30px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.meter-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #a855f7);
+    border-radius: 30px;
+    transition: width 0.5s ease;
+}
+
+.signal-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.ai-summary-card .summary-text {
+    line-height: 1.5;
+    font-size: 0.9rem;
+    color: #ccdeff;
+    margin-top: 0.6rem;
+}
