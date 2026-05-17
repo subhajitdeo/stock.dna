@@ -19,256 +19,183 @@ jobs:
           python-version: '3.11'
       
       - name: Install dependencies
-        run: pip install pandas numpy ta
+        run: |
+          pip install pandas numpy ta
       
       - name: Calculate indicators from existing JSON files
         run: |
-          import json
-          import os
-          import pandas as pd
-          import numpy as np
-          from ta.momentum import RSIIndicator, MACD
-          from ta.trend import EMAIndicator, SMAIndicator, ADXIndicator
-          from ta.volatility import BollingerBands, AverageTrueRange
-          from ta.volume import OnBalanceVolumeIndicator
-          
-          # Create processed directory
-          os.makedirs('data/processed', exist_ok=True)
-          
-          # Read all JSON files from /data/ folder (created by 5:00 PM YML)
-          data_dir = 'data'
-          processed_dir = 'data/processed'
-          
-          for filename in os.listdir(data_dir):
-              if not filename.endswith('.json') or filename.startswith('processed'):
-                  continue
-              
-              ticker = filename.replace('.json', '')
-              print(f"\n📊 Calculating indicators for {ticker}...")
-              
-              # Read the raw JSON file (already saved by fetch-data.yml)
-              with open(os.path.join(data_dir, filename), 'r') as f:
-                  raw_data = json.load(f)
-              
-              # Extract OHLCV data from the saved file
-              # The fetch-data.yml saves Yahoo's raw response structure
-              result = raw_data.get('chart', {}).get('result', [])
-              if not result:
-                  print(f"  ⚠️ No data found in {filename}")
-                  continue
-              
-              quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
-              timestamps = result[0].get('timestamp', [])
-              
-              # Build DataFrame from existing data
-              data = []
-              for i in range(len(timestamps)):
-                  if all([
-                      quotes.get('open', [None])[i] is not None,
-                      quotes.get('high', [None])[i] is not None,
-                      quotes.get('low', [None])[i] is not None,
-                      quotes.get('close', [None])[i] is not None,
-                      quotes.get('volume', [None])[i] is not None
-                  ]):
-                      data.append({
-                          'time': pd.Timestamp(timestamps[i], unit='s').strftime('%Y-%m-%d'),
-                          'open': float(quotes['open'][i]),
-                          'high': float(quotes['high'][i]),
-                          'low': float(quotes['low'][i]),
-                          'close': float(quotes['close'][i]),
-                          'volume': int(quotes['volume'][i])
-                      })
-              
-              if len(data) < 30:
-                  print(f"  ⚠️ Insufficient data: only {len(data)} days")
-                  continue
-              
-              df = pd.DataFrame(data)
-              df['time'] = pd.to_datetime(df['time'])
-              df.set_index('time', inplace=True)
-              
-              # ========== CALCULATE ALL INDICATORS ==========
-              
-              # RSI (14)
-              df['RSI'] = RSIIndicator(close=df['close'], window=14).rsi()
-              
-              # MACD (12, 26, 9)
-              macd = MACD(close=df['close'])
-              df['MACD'] = macd.macd()
-              df['MACD_signal'] = macd.macd_signal()
-              df['MACD_histogram'] = macd.macd_diff()
-              
-              # EMAs
-              df['EMA20'] = EMAIndicator(close=df['close'], window=20).ema_indicator()
-              df['EMA50'] = EMAIndicator(close=df['close'], window=50).ema_indicator()
-              df['EMA100'] = EMAIndicator(close=df['close'], window=100).ema_indicator()
-              df['EMA200'] = EMAIndicator(close=df['close'], window=200).ema_indicator()
-              
-              # SMAs
-              df['SMA20'] = SMAIndicator(close=df['close'], window=20).sma_indicator()
-              df['SMA50'] = SMAIndicator(close=df['close'], window=50).sma_indicator()
-              df['SMA200'] = SMAIndicator(close=df['close'], window=200).sma_indicator()
-              
-              # Bollinger Bands (20, 2)
-              bb = BollingerBands(close=df['close'], window=20, window_dev=2)
-              df['BB_upper'] = bb.bollinger_hband()
-              df['BB_middle'] = bb.bollinger_mavg()
-              df['BB_lower'] = bb.bollinger_lband()
-              
-              # ATR (14)
-              df['ATR'] = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14).average_true_range()
-              
-              # ADX (14)
-              adx = ADXIndicator(high=df['high'], low=df['low'], close=df['close'], window=14)
-              df['ADX'] = adx.adx()
-              
-              # OBV
-              df['OBV'] = OnBalanceVolumeIndicator(close=df['close'], volume=df['volume']).on_balance_volume()
-              
-              # Stochastic RSI (manually calculated)
-              rsi_for_stoch = df['RSI'].copy()
-              df['StochRSI'] = (rsi_for_stoch - rsi_for_stoch.rolling(14).min()) / (rsi_for_stoch.rolling(14).max() - rsi_for_stoch.rolling(14).min()) * 100
-              
-              # CCI (20)
-              tp = (df['high'] + df['low'] + df['close']) / 3
-              sma_tp = tp.rolling(20).mean()
-              mad = tp.rolling(20).apply(lambda x: np.abs(x - x.mean()).mean())
-              df['CCI'] = (tp - sma_tp) / (0.015 * mad)
-              
-              # ROC (Rate of Change - 12 periods)
-              df['ROC'] = (df['close'] - df['close'].shift(12)) / df['close'].shift(12) * 100
-              
-              # Momentum (10 periods)
-              df['Momentum'] = df['close'] - df['close'].shift(10)
-              
-              # Williams %R (14)
-              df['Williams_R'] = (df['high'].rolling(14).max() - df['close']) / (df['high'].rolling(14).max() - df['low'].rolling(14).min()) * -100
-              
-              # MFI (Money Flow Index - 14)
-              typical_price = (df['high'] + df['low'] + df['close']) / 3
-              money_flow = typical_price * df['volume']
-              positive_flow = money_flow.where(typical_price > typical_price.shift(1), 0).rolling(14).sum()
-              negative_flow = money_flow.where(typical_price < typical_price.shift(1), 0).rolling(14).sum()
-              money_ratio = positive_flow / negative_flow
-              df['MFI'] = 100 - (100 / (1 + money_ratio))
-              
-              # SuperTrend (simplified - 10, 3)
-              atr_st = df['ATR'].copy()
-              hl2 = (df['high'] + df['low']) / 2
-              df['SuperTrend_upper'] = hl2 + 3 * atr_st
-              df['SuperTrend_lower'] = hl2 - 3 * atr_st
-              
-              # Get latest values
-              latest = df.iloc[-1]
-              prev = df.iloc[-2] if len(df) > 1 else latest
-              
-              # ========== GENERATE SIGNALS ==========
-              
-              def get_signal(value, buy_cond, sell_cond):
-                  if buy_cond:
-                      return 'BUY'
-                  elif sell_cond:
-                      return 'SELL'
-                  return 'NEUTRAL'
-              
-              # Prepare output
-              output_data = {
-                  'symbol': ticker,
-                  'updated_at': pd.Timestamp.now().isoformat(),
-                  'latest_price': float(latest['close']),
-                  'candles': data[-252:],  # Last 252 days for chart
-                  'indicators': {
-                      'RSI': {
-                          'value': float(latest['RSI']) if pd.notna(latest['RSI']) else None,
-                          'signal': get_signal(latest['RSI'], latest['RSI'] < 30, latest['RSI'] > 70)
-                      },
-                      'MACD': {
-                          'value': float(latest['MACD']) if pd.notna(latest['MACD']) else None,
-                          'signal': get_signal(latest['MACD'], latest['MACD'] > latest['MACD_signal'], latest['MACD'] < latest['MACD_signal'])
-                      },
-                      'EMA20': {
-                          'value': float(latest['EMA20']) if pd.notna(latest['EMA20']) else float(latest['close']),
-                          'signal': get_signal(latest['close'], latest['close'] > latest['EMA20'], latest['close'] < latest['EMA20'])
-                      },
-                      'EMA50': {
-                          'value': float(latest['EMA50']) if pd.notna(latest['EMA50']) else float(latest['close']),
-                          'signal': get_signal(latest['close'], latest['close'] > latest['EMA50'], latest['close'] < latest['EMA50'])
-                      },
-                      'EMA100': {
-                          'value': float(latest['EMA100']) if pd.notna(latest['EMA100']) else float(latest['close']),
-                          'signal': get_signal(latest['close'], latest['close'] > latest['EMA100'], latest['close'] < latest['EMA100'])
-                      },
-                      'EMA200': {
-                          'value': float(latest['EMA200']) if pd.notna(latest['EMA200']) else float(latest['close']),
-                          'signal': get_signal(latest['close'], latest['close'] > latest['EMA200'], latest['close'] < latest['EMA200'])
-                      },
-                      'SMA20': {
-                          'value': float(latest['SMA20']) if pd.notna(latest['SMA20']) else float(latest['close']),
-                          'signal': get_signal(latest['close'], latest['close'] > latest['SMA20'], latest['close'] < latest['SMA20'])
-                      },
-                      'SMA50': {
-                          'value': float(latest['SMA50']) if pd.notna(latest['SMA50']) else float(latest['close']),
-                          'signal': get_signal(latest['close'], latest['close'] > latest['SMA50'], latest['close'] < latest['SMA50'])
-                      },
-                      'SMA200': {
-                          'value': float(latest['SMA200']) if pd.notna(latest['SMA200']) else float(latest['close']),
-                          'signal': get_signal(latest['close'], latest['close'] > latest['SMA200'], latest['close'] < latest['SMA200'])
-                      },
-                      'BollingerBands': {
-                          'upper': float(latest['BB_upper']) if pd.notna(latest['BB_upper']) else None,
-                          'lower': float(latest['BB_lower']) if pd.notna(latest['BB_lower']) else None,
-                          'signal': get_signal(latest['close'], latest['close'] < latest['BB_lower'], latest['close'] > latest['BB_upper'])
-                      },
-                      'ATR': {
-                          'value': float(latest['ATR']) if pd.notna(latest['ATR']) else None,
-                          'signal': 'HIGH_VOLATILITY' if pd.notna(latest['ATR']) and latest['ATR'] > df['ATR'].mean() else 'LOW_VOLATILITY'
-                      },
-                      'ADX': {
-                          'value': float(latest['ADX']) if pd.notna(latest['ADX']) else None,
-                          'signal': 'STRONG_TREND' if latest['ADX'] > 25 else 'WEAK_TREND'
-                      },
-                      'StochasticRSI': {
-                          'value': float(latest['StochRSI']) if pd.notna(latest['StochRSI']) else None,
-                          'signal': get_signal(latest['StochRSI'], latest['StochRSI'] < 20, latest['StochRSI'] > 80)
-                      },
-                      'CCI': {
-                          'value': float(latest['CCI']) if pd.notna(latest['CCI']) else None,
-                          'signal': get_signal(latest['CCI'], latest['CCI'] < -100, latest['CCI'] > 100)
-                      },
-                      'ROC': {
-                          'value': float(latest['ROC']) if pd.notna(latest['ROC']) else None,
-                          'signal': get_signal(latest['ROC'], latest['ROC'] > 0, latest['ROC'] < 0)
-                      },
-                      'Momentum': {
-                          'value': float(latest['Momentum']) if pd.notna(latest['Momentum']) else None,
-                          'signal': get_signal(latest['Momentum'], latest['Momentum'] > 0, latest['Momentum'] < 0)
-                      },
-                      'Williams_R': {
-                          'value': float(latest['Williams_R']) if pd.notna(latest['Williams_R']) else None,
-                          'signal': get_signal(latest['Williams_R'], latest['Williams_R'] < -80, latest['Williams_R'] > -20)
-                      },
-                      'MFI': {
-                          'value': float(latest['MFI']) if pd.notna(latest['MFI']) else None,
-                          'signal': get_signal(latest['MFI'], latest['MFI'] < 20, latest['MFI'] > 80)
-                      },
-                      'OBV': {
-                          'value': float(latest['OBV']) if pd.notna(latest['OBV']) else None,
-                          'signal': get_signal(latest['OBV'], latest['OBV'] > prev['OBV'], latest['OBV'] < prev['OBV'])
-                      },
-                      'SuperTrend': {
-                          'signal': 'BUY' if latest['close'] > latest['SuperTrend_lower'] else 'SELL'
-                      }
-                  }
-              }
-              
-              # Save processed file
-              output_file = os.path.join(processed_dir, ticker)
-              with open(output_file, 'w') as f:
-                  json.dump(output_data, f, indent=2)
-              
-              print(f"  ✅ Saved to {output_file}")
-          
-          print("\n🎉 All indicators calculated successfully!")
+          python -c "
+import json
+import os
+import pandas as pd
+import numpy as np
+from ta.momentum import RSIIndicator, MACD
+from ta.trend import EMAIndicator, SMAIndicator, ADXIndicator
+from ta.volatility import BollingerBands, AverageTrueRange
+from ta.volume import OnBalanceVolumeIndicator
+
+# Create processed directory
+os.makedirs('data/processed', exist_ok=True)
+
+# Read all JSON files from /data/ folder
+data_dir = 'data'
+processed_dir = 'data/processed'
+
+for filename in os.listdir(data_dir):
+    if not filename.endswith('.json') or filename.startswith('processed'):
+        continue
+    
+    ticker = filename.replace('.json', '')
+    print(f'\n📊 Calculating indicators for {ticker}...')
+    
+    # Read the raw JSON file
+    with open(os.path.join(data_dir, filename), 'r') as f:
+        raw_data = json.load(f)
+    
+    # Extract OHLCV data
+    result = raw_data.get('chart', {}).get('result', [])
+    if not result:
+        print(f'  ⚠️ No data found in {filename}')
+        continue
+    
+    quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
+    timestamps = result[0].get('timestamp', [])
+    
+    # Build DataFrame
+    data = []
+    for i in range(len(timestamps)):
+        if all([
+            quotes.get('open', [None])[i] is not None,
+            quotes.get('high', [None])[i] is not None,
+            quotes.get('low', [None])[i] is not None,
+            quotes.get('close', [None])[i] is not None,
+            quotes.get('volume', [None])[i] is not None
+        ]):
+            data.append({
+                'time': pd.Timestamp(timestamps[i], unit='s').strftime('%Y-%m-%d'),
+                'open': float(quotes['open'][i]),
+                'high': float(quotes['high'][i]),
+                'low': float(quotes['low'][i]),
+                'close': float(quotes['close'][i]),
+                'volume': int(quotes['volume'][i])
+            })
+    
+    if len(data) < 30:
+        print(f'  ⚠️ Insufficient data: only {len(data)} days')
+        continue
+    
+    df = pd.DataFrame(data)
+    df['time'] = pd.to_datetime(df['time'])
+    df.set_index('time', inplace=True)
+    
+    # Calculate indicators
+    df['RSI'] = RSIIndicator(close=df['close'], window=14).rsi()
+    
+    macd = MACD(close=df['close'])
+    df['MACD'] = macd.macd()
+    df['MACD_signal'] = macd.macd_signal()
+    
+    df['EMA20'] = EMAIndicator(close=df['close'], window=20).ema_indicator()
+    df['EMA50'] = EMAIndicator(close=df['close'], window=50).ema_indicator()
+    df['EMA100'] = EMAIndicator(close=df['close'], window=100).ema_indicator()
+    df['EMA200'] = EMAIndicator(close=df['close'], window=200).ema_indicator()
+    
+    df['SMA20'] = SMAIndicator(close=df['close'], window=20).sma_indicator()
+    df['SMA50'] = SMAIndicator(close=df['close'], window=50).sma_indicator()
+    df['SMA200'] = SMAIndicator(close=df['close'], window=200).sma_indicator()
+    
+    bb = BollingerBands(close=df['close'], window=20, window_dev=2)
+    df['BB_upper'] = bb.bollinger_hband()
+    df['BB_lower'] = bb.bollinger_lband()
+    
+    df['ATR'] = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14).average_true_range()
+    
+    adx = ADXIndicator(high=df['high'], low=df['low'], close=df['close'], window=14)
+    df['ADX'] = adx.adx()
+    
+    df['OBV'] = OnBalanceVolumeIndicator(close=df['close'], volume=df['volume']).on_balance_volume()
+    
+    # Stochastic RSI
+    rsi_for_stoch = df['RSI'].copy()
+    df['StochRSI'] = (rsi_for_stoch - rsi_for_stoch.rolling(14).min()) / (rsi_for_stoch.rolling(14).max() - rsi_for_stoch.rolling(14).min()) * 100
+    
+    # CCI
+    tp = (df['high'] + df['low'] + df['close']) / 3
+    sma_tp = tp.rolling(20).mean()
+    mad = tp.rolling(20).apply(lambda x: np.abs(x - x.mean()).mean())
+    df['CCI'] = (tp - sma_tp) / (0.015 * mad)
+    
+    # ROC
+    df['ROC'] = (df['close'] - df['close'].shift(12)) / df['close'].shift(12) * 100
+    
+    # Momentum
+    df['Momentum'] = df['close'] - df['close'].shift(10)
+    
+    # Williams %R
+    df['Williams_R'] = (df['high'].rolling(14).max() - df['close']) / (df['high'].rolling(14).max() - df['low'].rolling(14).min()) * -100
+    
+    # MFI
+    typical_price = (df['high'] + df['low'] + df['close']) / 3
+    money_flow = typical_price * df['volume']
+    positive_flow = money_flow.where(typical_price > typical_price.shift(1), 0).rolling(14).sum()
+    negative_flow = money_flow.where(typical_price < typical_price.shift(1), 0).rolling(14).sum()
+    money_ratio = positive_flow / negative_flow
+    df['MFI'] = 100 - (100 / (1 + money_ratio))
+    
+    # SuperTrend
+    hl2 = (df['high'] + df['low']) / 2
+    df['SuperTrend_lower'] = hl2 - 3 * df['ATR']
+    
+    # Get latest values
+    latest = df.iloc[-1]
+    prev = df.iloc[-2] if len(df) > 1 else latest
+    
+    def get_signal(value, buy_cond, sell_cond):
+        if buy_cond:
+            return 'BUY'
+        elif sell_cond:
+            return 'SELL'
+        return 'NEUTRAL'
+    
+    # Prepare output
+    output_data = {
+        'symbol': ticker,
+        'updated_at': pd.Timestamp.now().isoformat(),
+        'latest_price': float(latest['close']),
+        'candles': data[-252:],
+        'indicators': {
+            'RSI': {'value': float(latest['RSI']) if pd.notna(latest['RSI']) else None, 'signal': get_signal(latest['RSI'], latest['RSI'] < 30, latest['RSI'] > 70)},
+            'MACD': {'value': float(latest['MACD']) if pd.notna(latest['MACD']) else None, 'signal': get_signal(latest['MACD'], latest['MACD'] > latest['MACD_signal'], latest['MACD'] < latest['MACD_signal'])},
+            'EMA20': {'value': float(latest['EMA20']) if pd.notna(latest['EMA20']) else float(latest['close']), 'signal': get_signal(latest['close'], latest['close'] > latest['EMA20'], latest['close'] < latest['EMA20'])},
+            'EMA50': {'value': float(latest['EMA50']) if pd.notna(latest['EMA50']) else float(latest['close']), 'signal': get_signal(latest['close'], latest['close'] > latest['EMA50'], latest['close'] < latest['EMA50'])},
+            'EMA100': {'value': float(latest['EMA100']) if pd.notna(latest['EMA100']) else float(latest['close']), 'signal': get_signal(latest['close'], latest['close'] > latest['EMA100'], latest['close'] < latest['EMA100'])},
+            'EMA200': {'value': float(latest['EMA200']) if pd.notna(latest['EMA200']) else float(latest['close']), 'signal': get_signal(latest['close'], latest['close'] > latest['EMA200'], latest['close'] < latest['EMA200'])},
+            'SMA20': {'value': float(latest['SMA20']) if pd.notna(latest['SMA20']) else float(latest['close']), 'signal': get_signal(latest['close'], latest['close'] > latest['SMA20'], latest['close'] < latest['SMA20'])},
+            'SMA50': {'value': float(latest['SMA50']) if pd.notna(latest['SMA50']) else float(latest['close']), 'signal': get_signal(latest['close'], latest['close'] > latest['SMA50'], latest['close'] < latest['SMA50'])},
+            'SMA200': {'value': float(latest['SMA200']) if pd.notna(latest['SMA200']) else float(latest['close']), 'signal': get_signal(latest['close'], latest['close'] > latest['SMA200'], latest['close'] < latest['SMA200'])},
+            'BollingerBands': {'upper': float(latest['BB_upper']) if pd.notna(latest['BB_upper']) else None, 'lower': float(latest['BB_lower']) if pd.notna(latest['BB_lower']) else None, 'signal': get_signal(latest['close'], latest['close'] < latest['BB_lower'], latest['close'] > latest['BB_upper'])},
+            'ATR': {'value': float(latest['ATR']) if pd.notna(latest['ATR']) else None, 'signal': 'HIGH_VOLATILITY' if pd.notna(latest['ATR']) and latest['ATR'] > df['ATR'].mean() else 'LOW_VOLATILITY'},
+            'ADX': {'value': float(latest['ADX']) if pd.notna(latest['ADX']) else None, 'signal': 'STRONG_TREND' if latest['ADX'] > 25 else 'WEAK_TREND'},
+            'StochasticRSI': {'value': float(latest['StochRSI']) if pd.notna(latest['StochRSI']) else None, 'signal': get_signal(latest['StochRSI'], latest['StochRSI'] < 20, latest['StochRSI'] > 80)},
+            'CCI': {'value': float(latest['CCI']) if pd.notna(latest['CCI']) else None, 'signal': get_signal(latest['CCI'], latest['CCI'] < -100, latest['CCI'] > 100)},
+            'ROC': {'value': float(latest['ROC']) if pd.notna(latest['ROC']) else None, 'signal': get_signal(latest['ROC'], latest['ROC'] > 0, latest['ROC'] < 0)},
+            'Momentum': {'value': float(latest['Momentum']) if pd.notna(latest['Momentum']) else None, 'signal': get_signal(latest['Momentum'], latest['Momentum'] > 0, latest['Momentum'] < 0)},
+            'Williams_R': {'value': float(latest['Williams_R']) if pd.notna(latest['Williams_R']) else None, 'signal': get_signal(latest['Williams_R'], latest['Williams_R'] < -80, latest['Williams_R'] > -20)},
+            'MFI': {'value': float(latest['MFI']) if pd.notna(latest['MFI']) else None, 'signal': get_signal(latest['MFI'], latest['MFI'] < 20, latest['MFI'] > 80)},
+            'OBV': {'value': float(latest['OBV']) if pd.notna(latest['OBV']) else None, 'signal': get_signal(latest['OBV'], latest['OBV'] > prev['OBV'], latest['OBV'] < prev['OBV'])},
+            'SuperTrend': {'signal': 'BUY' if latest['close'] > latest['SuperTrend_lower'] else 'SELL'}
+        }
+    }
+    
+    # Save processed file
+    output_file = os.path.join(processed_dir, ticker)
+    with open(output_file, 'w') as f:
+        json.dump(output_data, f, indent=2)
+    
+    print(f'  ✅ Saved to {output_file}')
+
+print('\n🎉 All indicators calculated successfully!')
+"
       
       - name: Commit and push
         run: |
