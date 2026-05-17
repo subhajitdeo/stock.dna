@@ -1,8 +1,8 @@
-name: Calculate Indicators
+name: Calculate Indicators (Pure Math)
 
 on:
   schedule:
-    - cron: '30 12 * * *'   # 6:00 PM IST (adjust as needed)
+    - cron: '00 12 * * *'   # 5:30 PM IST
   workflow_dispatch:
 
 permissions:
@@ -13,60 +13,138 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
-      - name: Install dependencies
-        run: |
-          pip install pandas numpy ta
+      - name: Install dependencies (only pandas/numpy)
+        run: pip install pandas numpy
       
-      - name: Create Python calculator script
+      - name: Run pure math indicator calculator
         run: |
-          cat > calculate.py << 'EOF'
-import json
-import os
+          python -c "
+import json, os, math
 import pandas as pd
 import numpy as np
-from ta.momentum import RSIIndicator, MACD
-from ta.trend import EMAIndicator, SMAIndicator, ADXIndicator
-from ta.volatility import BollingerBands, AverageTrueRange
-from ta.volume import OnBalanceVolumeIndicator
 
 DATA_DIR = 'data'
 PROCESSED_DIR = 'data/processed'
 MIN_DAYS = 30
-
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
+def ema(values, period):
+    # Exponential Moving Average
+    alpha = 2 / (period + 1)
+    result = [values[0]]
+    for val in values[1:]:
+        result.append(alpha * val + (1 - alpha) * result[-1])
+    return result
+
+def sma(values, period):
+    if len(values) < period:
+        return values
+    return [sum(values[i-period:i])/period for i in range(period, len(values)+1)]
+
+def rsi(closes, period=14):
+    gains = []
+    losses = []
+    for i in range(1, len(closes)):
+        diff = closes[i] - closes[i-1]
+        gains.append(diff if diff > 0 else 0)
+        losses.append(-diff if diff < 0 else 0)
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    rs = avg_gain / avg_loss if avg_loss != 0 else 100
+    rsi_val = 100 - (100 / (1 + rs))
+    return rsi_val
+
+def macd(closes, fast=12, slow=26, signal=9):
+    ema_fast = ema(closes, fast)
+    ema_slow = ema(closes, slow)
+    macd_line = [ema_fast[i] - ema_slow[i] for i in range(len(ema_slow))]
+    signal_line = ema(macd_line, signal)
+    return macd_line[-1], signal_line[-1]
+
+def bollinger_bands(closes, period=20, std_dev=2):
+    if len(closes) < period:
+        return None, None, None
+    recent = closes[-period:]
+    sma_val = sum(recent) / period
+    variance = sum((x - sma_val) ** 2 for x in recent) / period
+    std = math.sqrt(variance)
+    upper = sma_val + std_dev * std
+    lower = sma_val - std_dev * std
+    return upper, sma_val, lower
+
+def atr(high, low, close, period=14):
+    true_ranges = []
+    for i in range(1, len(high)):
+        tr = max(high[i] - low[i],
+                 abs(high[i] - close[i-1]),
+                 abs(low[i] - close[i-1]))
+        true_ranges.append(tr)
+    # simple moving average of true ranges
+    if len(true_ranges) >= period:
+        return sum(true_ranges[-period:]) / period
+    return None
+
+def adx(high, low, close, period=14):
+    if len(high) < period + 1:
+        return None
+    tr_list = []
+    plus_dm = []
+    minus_dm = []
+    for i in range(1, len(high)):
+        tr = max(high[i] - low[i],
+                 abs(high[i] - close[i-1]),
+                 abs(low[i] - close[i-1]))
+        tr_list.append(tr)
+        up_move = high[i] - high[i-1]
+        down_move = low[i-1] - low[i]
+        plus_dm.append(up_move if up_move > down_move and up_move > 0 else 0)
+        minus_dm.append(down_move if down_move > up_move and down_move > 0 else 0)
+    if len(tr_list) < period:
+        return None
+    atr_val = sum(tr_list[-period:]) / period
+    plus_di = 100 * (sum(plus_dm[-period:]) / period) / atr_val if atr_val != 0 else 0
+    minus_di = 100 * (sum(minus_dm[-period:]) / period) / atr_val if atr_val != 0 else 0
+    dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di) if (plus_di + minus_di) != 0 else 0
+    # ADX is smoothed DX over period
+    return dx
+
+def obv(closes, volumes):
+    obv_vals = [volumes[0]]
+    for i in range(1, len(closes)):
+        if closes[i] > closes[i-1]:
+            obv_vals.append(obv_vals[-1] + volumes[i])
+        elif closes[i] < closes[i-1]:
+            obv_vals.append(obv_vals[-1] - volumes[i])
+        else:
+            obv_vals.append(obv_vals[-1])
+    return obv_vals
+
 def get_signal(buy_cond, sell_cond):
-    if buy_cond: return 'BUY'
-    if sell_cond: return 'SELL'
+    if buy_cond:
+        return 'BUY'
+    elif sell_cond:
+        return 'SELL'
     return 'NEUTRAL'
 
-def safe_float(x):
-    return float(x) if pd.notna(x) else None
-
+# Process each file
 files = [f for f in os.listdir(DATA_DIR) if f.endswith('.json') and f != 'processed']
-print(f"Found {len(files)} files to process")
+print(f'Found {len(files)} files')
 
 for filename in files:
     ticker = filename.replace('.json', '')
-    print(f"\n📊 Processing {ticker}...")
-    
+    print(f'\n📊 Processing {ticker}...')
     try:
         with open(os.path.join(DATA_DIR, filename), 'r') as f:
             raw = json.load(f)
-        
         result = raw.get('chart', {}).get('result', [])
         if not result:
-            print(f"  No data for {ticker}")
             continue
-        
         quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
         timestamps = result[0].get('timestamp', [])
-        
         rows = []
         for i in range(len(timestamps)):
             o = quotes.get('open', [None])[i]
@@ -77,134 +155,90 @@ for filename in files:
             if None not in (o, h, l, c, v):
                 rows.append({
                     'time': pd.Timestamp(timestamps[i], unit='s').strftime('%Y-%m-%d'),
-                    'open': float(o),
-                    'high': float(h),
-                    'low': float(l),
-                    'close': float(c),
-                    'volume': int(v)
+                    'open': float(o), 'high': float(h), 'low': float(l),
+                    'close': float(c), 'volume': int(v)
                 })
-        
         if len(rows) < MIN_DAYS:
-            print(f"  Insufficient days: {len(rows)}")
             continue
-        
         df = pd.DataFrame(rows)
-        df['time'] = pd.to_datetime(df['time'])
-        df.set_index('time', inplace=True)
-        
-        # Calculate indicators
-        df['RSI'] = RSIIndicator(close=df['close'], window=14).rsi()
-        
-        macd = MACD(close=df['close'])
-        df['MACD'] = macd.macd()
-        df['MACD_signal'] = macd.macd_signal()
-        
-        df['EMA20'] = EMAIndicator(close=df['close'], window=20).ema_indicator()
-        df['EMA50'] = EMAIndicator(close=df['close'], window=50).ema_indicator()
-        df['EMA100'] = EMAIndicator(close=df['close'], window=100).ema_indicator()
-        df['EMA200'] = EMAIndicator(close=df['close'], window=200).ema_indicator()
-        
-        df['SMA20'] = SMAIndicator(close=df['close'], window=20).sma_indicator()
-        df['SMA50'] = SMAIndicator(close=df['close'], window=50).sma_indicator()
-        df['SMA200'] = SMAIndicator(close=df['close'], window=200).sma_indicator()
-        
-        bb = BollingerBands(close=df['close'], window=20, window_dev=2)
-        df['BB_upper'] = bb.bollinger_hband()
-        df['BB_lower'] = bb.bollinger_lband()
-        
-        df['ATR'] = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14).average_true_range()
-        
-        adx = ADXIndicator(high=df['high'], low=df['low'], close=df['close'], window=14)
-        df['ADX'] = adx.adx()
-        
-        df['OBV'] = OnBalanceVolumeIndicator(close=df['close'], volume=df['volume']).on_balance_volume()
-        
-        latest = df.iloc[-1]
-        prev = df.iloc[-2] if len(df) > 1 else latest
-        
+        closes = df['close'].tolist()
+        highs = df['high'].tolist()
+        lows = df['low'].tolist()
+        volumes = df['volume'].tolist()
+        latest_close = closes[-1]
+        # RSI
+        rsi_val = rsi(closes, 14)
+        rsi_signal = get_signal(rsi_val < 30, rsi_val > 70)
+        # MACD
+        macd_line, macd_signal_line = macd(closes)
+        macd_signal = get_signal(macd_line > macd_signal_line, macd_line < macd_signal_line)
+        # EMAs
+        ema20 = ema(closes, 20)[-1]
+        ema50 = ema(closes, 50)[-1]
+        ema100 = ema(closes, 100)[-1]
+        ema200 = ema(closes, 200)[-1] if len(closes) >= 200 else latest_close
+        # SMAs
+        sma20 = sma(closes, 20)[-1] if len(closes) >= 20 else latest_close
+        sma50 = sma(closes, 50)[-1] if len(closes) >= 50 else latest_close
+        sma200 = sma(closes, 200)[-1] if len(closes) >= 200 else latest_close
+        # Signals
+        ema20_sig = get_signal(latest_close > ema20, latest_close < ema20)
+        ema50_sig = get_signal(latest_close > ema50, latest_close < ema50)
+        ema100_sig = get_signal(latest_close > ema100, latest_close < ema100)
+        ema200_sig = get_signal(latest_close > ema200, latest_close < ema200)
+        sma20_sig = get_signal(latest_close > sma20, latest_close < sma20)
+        sma50_sig = get_signal(latest_close > sma50, latest_close < sma50)
+        sma200_sig = get_signal(latest_close > sma200, latest_close < sma200)
+        # Bollinger Bands
+        bb_upper, bb_mid, bb_lower = bollinger_bands(closes)
+        bb_signal = get_signal(latest_close < bb_lower, latest_close > bb_upper)
+        # ATR
+        atr_val = atr(highs, lows, closes)
+        atr_signal = 'HIGH' if atr_val and atr_val > np.mean([atr(highs, lows, closes)]) else 'LOW'
+        # ADX
+        adx_val = adx(highs, lows, closes)
+        adx_signal = 'STRONG_TREND' if adx_val and adx_val > 25 else 'WEAK_TREND'
+        # OBV
+        obv_vals = obv(closes, volumes)
+        obv_signal = get_signal(obv_vals[-1] > obv_vals[-2], obv_vals[-1] < obv_vals[-2]) if len(obv_vals) > 1 else 'NEUTRAL'
         # Build output
         output = {
             'symbol': ticker,
             'updated_at': pd.Timestamp.now().isoformat(),
-            'latest_price': round(float(latest['close']), 2),
+            'latest_price': round(latest_close, 2),
             'candles': rows[-252:],
             'indicators': {
-                'RSI': {
-                    'value': safe_float(latest['RSI']),
-                    'signal': get_signal(latest['RSI'] < 30, latest['RSI'] > 70)
-                },
-                'MACD': {
-                    'value': safe_float(latest['MACD']),
-                    'signal': get_signal(latest['MACD'] > latest['MACD_signal'], latest['MACD'] < latest['MACD_signal'])
-                },
-                'EMA20': {
-                    'value': safe_float(latest['EMA20']) or round(float(latest['close']), 2),
-                    'signal': get_signal(latest['close'] > latest['EMA20'], latest['close'] < latest['EMA20'])
-                },
-                'EMA50': {
-                    'value': safe_float(latest['EMA50']) or round(float(latest['close']), 2),
-                    'signal': get_signal(latest['close'] > latest['EMA50'], latest['close'] < latest['EMA50'])
-                },
-                'EMA100': {
-                    'value': safe_float(latest['EMA100']) or round(float(latest['close']), 2),
-                    'signal': get_signal(latest['close'] > latest['EMA100'], latest['close'] < latest['EMA100'])
-                },
-                'EMA200': {
-                    'value': safe_float(latest['EMA200']) or round(float(latest['close']), 2),
-                    'signal': get_signal(latest['close'] > latest['EMA200'], latest['close'] < latest['EMA200'])
-                },
-                'SMA20': {
-                    'value': safe_float(latest['SMA20']) or round(float(latest['close']), 2),
-                    'signal': get_signal(latest['close'] > latest['SMA20'], latest['close'] < latest['SMA20'])
-                },
-                'SMA50': {
-                    'value': safe_float(latest['SMA50']) or round(float(latest['close']), 2),
-                    'signal': get_signal(latest['close'] > latest['SMA50'], latest['close'] < latest['SMA50'])
-                },
-                'SMA200': {
-                    'value': safe_float(latest['SMA200']) or round(float(latest['close']), 2),
-                    'signal': get_signal(latest['close'] > latest['SMA200'], latest['close'] < latest['SMA200'])
-                },
-                'BollingerBands': {
-                    'upper': safe_float(latest['BB_upper']),
-                    'lower': safe_float(latest['BB_lower']),
-                    'signal': get_signal(latest['close'] < latest['BB_lower'], latest['close'] > latest['BB_upper'])
-                },
-                'ATR': {
-                    'value': safe_float(latest['ATR']),
-                    'signal': 'HIGH' if latest['ATR'] > df['ATR'].mean() else 'LOW'
-                },
-                'ADX': {
-                    'value': safe_float(latest['ADX']),
-                    'signal': 'STRONG_TREND' if latest['ADX'] > 25 else 'WEAK_TREND'
-                },
-                'OBV': {
-                    'value': safe_int(latest['OBV']),
-                    'signal': get_signal(latest['OBV'] > prev['OBV'], latest['OBV'] < prev['OBV'])
-                }
+                'RSI': {'value': round(rsi_val, 2), 'signal': rsi_signal},
+                'MACD': {'value': round(macd_line, 2), 'signal': macd_signal},
+                'EMA20': {'value': round(ema20, 2), 'signal': ema20_sig},
+                'EMA50': {'value': round(ema50, 2), 'signal': ema50_sig},
+                'EMA100': {'value': round(ema100, 2), 'signal': ema100_sig},
+                'EMA200': {'value': round(ema200, 2), 'signal': ema200_sig},
+                'SMA20': {'value': round(sma20, 2), 'signal': sma20_sig},
+                'SMA50': {'value': round(sma50, 2), 'signal': sma50_sig},
+                'SMA200': {'value': round(sma200, 2), 'signal': sma200_sig},
+                'BollingerBands': {'upper': round(bb_upper, 2) if bb_upper else None,
+                                   'lower': round(bb_lower, 2) if bb_lower else None,
+                                   'signal': bb_signal},
+                'ATR': {'value': round(atr_val, 2) if atr_val else None, 'signal': atr_signal},
+                'ADX': {'value': round(adx_val, 2) if adx_val else None, 'signal': adx_signal},
+                'OBV': {'value': int(obv_vals[-1]), 'signal': obv_signal}
             }
         }
-        
-        # Save to processed folder
         out_path = os.path.join(PROCESSED_DIR, ticker)
         with open(out_path, 'w') as f:
             json.dump(output, f, indent=2)
-        
-        print(f"  ✅ Saved to {out_path}")
-        
+        print(f'  ✅ Saved {ticker}')
     except Exception as e:
-        print(f"  ❌ Error: {e}")
+        print(f'  ❌ Error {ticker}: {e}')
 
-print("\n✅ All indicators calculated successfully!")
-EOF
+print('\n✅ All indicators calculated using pure math!')
+"
       
-      - name: Run calculation
-        run: python calculate.py
-      
-      - name: Commit and push results
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/processed/
-          git diff --cached --quiet || git commit -m "Auto-calculate technical indicators [skip ci]"
+          git diff --cached --quiet || git commit -m "Calculate indicators with math [skip ci]"
           git push
