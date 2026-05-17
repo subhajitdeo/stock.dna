@@ -1,157 +1,271 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
-    font-family: 'Inter', sans-serif;
-    color: #eef2ff;
-    padding: 1rem;
-    min-height: 100vh;
-}
-.app-container { max-width: 1600px; margin: 0 auto; }
-.glass-header, .chart-glass-card, .category-card, .recommendation-card, .ai-summary-card {
-    background: rgba(12, 20, 30, 0.55);
-    backdrop-filter: blur(12px);
-    border-radius: 1.5rem;
-    border: 1px solid rgba(59, 130, 246, 0.25);
-    transition: all 0.2s ease;
-}
-.glass-header {
-    padding: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-.logo-area { display: flex; align-items: center; gap: 0.5rem; font-size: 1.3rem; font-weight: 700; }
-.logo-area i { color: #3b82f6; font-size: 1.5rem; }
-.accent { color: #3b82f6; }
-.badge { font-size: 0.7rem; background: #1e2a4a; padding: 0.2rem 0.7rem; border-radius: 30px; }
-.search-wrapper {
-    display: flex;
-    gap: 0.5rem;
-    background: rgba(0,0,0,0.5);
-    border-radius: 60px;
-    padding: 0.2rem 0.2rem 0.2rem 1rem;
-    border: 1px solid #2d3a5e;
-}
-.search-wrapper input {
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 0.9rem;
-    width: 220px;
-    outline: none;
-}
-.btn-primary {
-    background: linear-gradient(135deg, #2563eb, #1e40af);
-    border: none;
-    padding: 0.5rem 1.2rem;
-    border-radius: 40px;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-.chart-glass-card { padding: 1rem; margin-bottom: 1.5rem; position: relative; }
-.chart-header { display: flex; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; }
-.symbol-title { font-weight: 700; font-size: 1.3rem; background: linear-gradient(135deg,#fff,#93c5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.chart-badge { background: #1e293b; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.7rem; }
-#chartContainer { border-radius: 1rem; overflow: hidden; }
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-radius: 1.5rem;
-    gap: 1rem;
-    z-index: 20;
-}
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #2c3e66;
-    border-top: 3px solid #3b82f6;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.hidden { display: none; }
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 1.6fr 1fr;
-    gap: 1rem;
-}
-.indicators-panel {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-}
-.category-card, .recommendation-card, .ai-summary-card { padding: 1rem; }
-.cat-header {
-    font-weight: 600;
-    border-left: 3px solid #3b82f6;
-    padding-left: 0.6rem;
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.indicators-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.indicator-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8rem;
-    padding: 0.2rem 0;
-    border-bottom: 1px dashed #1e2a44;
-}
-.indicator-name { font-weight: 500; color: #bfd9ff; }
-.signal-badge {
-    font-weight: 700;
-    padding: 0.1rem 0.6rem;
-    border-radius: 30px;
-    font-size: 0.7rem;
-}
-.buy { background: #10b98120; color: #34d399; border: 1px solid #10b981; }
-.strong-buy { background: #04785730; color: #6ee7b7; border: 1px solid #059669; }
-.sell { background: #ef444420; color: #f87171; border: 1px solid #ef4444; }
-.strong-sell { background: #b91c1c30; color: #fca5a5; border: 1px solid #dc2626; }
-.neutral { background: #47556930; color: #cbd5e1; border: 1px solid #6b7280; }
-.final-recommendation { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; }
-.strength-meter-wrapper { margin: 0.8rem 0; }
-.meter-label { font-size: 0.75rem; }
-.meter-bar-bg { background: #1e293b; border-radius: 30px; height: 8px; overflow: hidden; }
-.meter-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #a855f7); border-radius: 30px; transition: width 0.5s ease; }
-.signal-stats { display: flex; justify-content: space-around; margin-top: 0.8rem; font-size: 0.8rem; }
-.ai-summary-card .summary-text { line-height: 1.4; font-size: 0.85rem; color: #ccdeff; margin-top: 0.5rem; }
+let chart = null;
+let resizeHandlerAttached = false;
+let currentAbortController = null;
+let searchTimeout = null;
 
-/* ===== MOBILE RESPONSIVE ===== */
-@media (max-width: 768px) {
-    body { padding: 0.8rem; }
-    .dashboard-grid { grid-template-columns: 1fr; }
-    .indicators-panel { grid-template-columns: 1fr; }
-    .search-wrapper input { width: 140px; }
-    .glass-header { flex-direction: column; align-items: stretch; }
-    .search-wrapper { justify-content: space-between; }
-    .chart-glass-card { padding: 0.8rem; }
-    .symbol-title { font-size: 1.1rem; }
-    .final-recommendation { font-size: 1.4rem; }
-    .category-card, .recommendation-card, .ai-summary-card { padding: 0.8rem; }
-    .indicator-row { font-size: 0.75rem; }
+function isMobileView() { return window.innerWidth < 768; }
+
+async function loadNiftySymbols() {
+    try {
+        const res = await fetch('nifty500.json');
+        if (!res.ok) throw new Error();
+        const symbols = await res.json();
+        const datalist = document.getElementById("niftySuggestions");
+        datalist.innerHTML = "";
+        symbols.forEach(sym => {
+            const opt = document.createElement("option");
+            opt.value = sym.endsWith(".NS") ? sym : `${sym}.NS`;
+            datalist.appendChild(opt);
+        });
+    } catch {
+        const fallback = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "WIPRO.NS"];
+        const datalist = document.getElementById("niftySuggestions");
+        datalist.innerHTML = "";
+        fallback.forEach(sym => {
+            const opt = document.createElement("option");
+            opt.value = sym.endsWith(".NS") ? sym : `${sym}.NS`;
+            datalist.appendChild(opt);
+        });
+    }
 }
-@media (max-width: 480px) {
-    .search-wrapper input { width: 120px; }
-    .btn-primary { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+
+async function fetchStockData(symbol, signal) {
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(end.getFullYear() - 1);
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${Math.floor(start/1000)}&period2=${Math.floor(end/1000)}&interval=1d`;
+    const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const resp = await fetch(proxy, { signal });
+    if (!resp.ok) {
+        if (resp.status === 429) throw new Error("Rate limit exceeded. Please wait.");
+        if (resp.status >= 500) throw new Error("Market data server unavailable.");
+        throw new Error(`HTTP ${resp.status}`);
+    }
+    const json = await resp.json();
+    if (json.chart?.error) throw new Error(json.chart.error.description || "Yahoo error");
+    if (!json.chart?.result?.length) throw new Error("Symbol not found");
+    const quotes = json.chart.result[0].indicators?.quote?.[0];
+    if (!quotes) throw new Error("Invalid market data format");
+    const timestamps = json.chart.result[0].timestamp;
+    const data = [];
+    for (let i = 0; i < timestamps.length; i++) {
+        if (quotes.open[i] != null && quotes.high[i] != null && quotes.low[i] != null && quotes.close[i] != null && quotes.volume[i] != null) {
+            data.push({
+                time: new Date(timestamps[i]*1000).toISOString().split('T')[0],
+                open: quotes.open[i],
+                high: quotes.high[i],
+                low: quotes.low[i],
+                close: quotes.close[i],
+                volume: quotes.volume[i]
+            });
+        }
+    }
+    if (data.length < 30) throw new Error("Insufficient data");
+    return data;
+}
+
+function drawChart(data) {
+    if (chart) { chart.remove(); chart = null; }
+    const container = document.getElementById("chartContainer");
+    container.innerHTML = "";
+    const height = isMobileView() ? 320 : 430;
+    chart = LightweightCharts.createChart(container, {
+        layout: { background: { color: '#0a1020' }, textColor: '#cbd5e6' },
+        grid: { vertLines: { color: '#1e2a3a' }, horzLines: { color: '#1e2a3a' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#2d3a5e' },
+        timeScale: { borderColor: '#2d3a5e', timeVisible: true },
+        width: container.clientWidth,
+        height: height
+    });
+    const candleSeries = chart.addCandlestickSeries({ upColor: '#26a69a', downColor: '#ef5350', borderVisible: false });
+    candleSeries.setData(data.map(d => ({ time: d.time, open: d.open, high: d.high, low: d.low, close: d.close })));
+    chart.timeScale().fitContent();
+    if (!resizeHandlerAttached) {
+        window.addEventListener('resize', () => {
+            if (chart) {
+                chart.applyOptions({ width: document.getElementById("chartContainer").clientWidth, height: isMobileView() ? 320 : 430 });
+            } else {
+                const c = document.getElementById("chartContainer");
+                if (c && c.innerHTML.includes("Enter")) c.style.height = `${isMobileView() ? 320 : 430}px`;
+            }
+        });
+        resizeHandlerAttached = true;
+    }
+}
+
+function getRSISignal(r) { if (r > 70) return "SELL"; if (r < 30) return "BUY"; return "NEUTRAL"; }
+function getMacdSignal(m, s) { return m > s ? "BUY" : (m < s ? "SELL" : "NEUTRAL"); }
+function getEMASignal(p, e) { return p > e ? "BUY" : (p < e ? "SELL" : "NEUTRAL"); }
+function getBollingerSignal(c, u, l) { if (c > u) return "SELL"; if (c < l) return "BUY"; return "NEUTRAL"; }
+function getStochRSISignal(s) { if (s > 80) return "SELL"; if (s < 20) return "BUY"; return "NEUTRAL"; }
+function getCCISignal(c) { if (c > 100) return "SELL"; if (c < -100) return "BUY"; return "NEUTRAL"; }
+function getMomentumSignal(m) { return m > 0 ? "BUY" : (m < 0 ? "SELL" : "NEUTRAL"); }
+function getOBVSignal(o) { if (o.length<2) return "NEUTRAL"; return o[o.length-1] > o[o.length-2] ? "BUY" : "SELL"; }
+function getSuperTrendSignal(st, close) { return close > st ? "BUY" : "SELL"; }
+
+function computeSuperTrend(high, low, close, period=10, mult=3) {
+    const atr = technicalindicators.ATR.calculate({ high, low, close, period });
+    if (atr.length < period) return null;
+    const lastATR = atr[atr.length-1];
+    const hl2 = high.map((h,i)=>(h+low[i])/2);
+    const basicUpper = hl2.map((v,i)=> v + mult * (atr[i]||lastATR));
+    const basicLower = hl2.map((v,i)=> v - mult * (atr[i]||lastATR));
+    let finalUpper=[], finalLower=[], trend=[];
+    for (let i=0;i<close.length;i++) {
+        if(i===0) { finalUpper[i]=basicUpper[i]; finalLower[i]=basicLower[i]; trend[i]=1; continue; }
+        finalUpper[i] = (basicUpper[i] < finalUpper[i-1] || close[i-1] > finalUpper[i-1]) ? basicUpper[i] : finalUpper[i-1];
+        finalLower[i] = (basicLower[i] > finalLower[i-1] || close[i-1] < finalLower[i-1]) ? basicLower[i] : finalLower[i-1];
+        if(trend[i-1]===1 && close[i] <= finalLower[i]) trend[i]=-1;
+        else if(trend[i-1]===-1 && close[i] >= finalUpper[i]) trend[i]=1;
+        else trend[i]=trend[i-1];
+    }
+    return trend.map((t,i)=> t===1 ? finalLower[i] : finalUpper[i]);
+}
+
+async function analyzeStock(symbol) {
+    if (currentAbortController) currentAbortController.abort();
+    currentAbortController = new AbortController();
+    const loading = document.getElementById("loadingOverlay");
+    const btn = document.getElementById("searchBtn");
+    loading.classList.remove("hidden");
+    btn.disabled = true;
+    try {
+        const data = await fetchStockData(symbol, currentAbortController.signal);
+        currentAbortController = null;
+        document.getElementById("symbolTitle").innerText = symbol;
+        drawChart(data);
+        const closes = data.map(d=>d.close);
+        const highs = data.map(d=>d.high);
+        const lows = data.map(d=>d.low);
+        const volumes = data.map(d=>d.volume);
+        const latest = closes[closes.length-1];
+        const ema20 = technicalindicators.EMA.calculate({period:20, values:closes});
+        const ema50 = technicalindicators.EMA.calculate({period:50, values:closes});
+        const ema100 = technicalindicators.EMA.calculate({period:100, values:closes});
+        const ema200 = technicalindicators.EMA.calculate({period:200, values:closes});
+        const sma20 = technicalindicators.SMA.calculate({period:20, values:closes});
+        const sma50 = technicalindicators.SMA.calculate({period:50, values:closes});
+        const sma200 = technicalindicators.SMA.calculate({period:200, values:closes});
+        const ema20v = ema20.length ? ema20.pop() : latest;
+        const ema50v = ema50.length ? ema50.pop() : latest;
+        const ema100v = ema100.length ? ema100.pop() : latest;
+        const ema200v = ema200.length ? ema200.pop() : latest;
+        const sma20v = sma20.length ? sma20.pop() : latest;
+        const sma50v = sma50.length ? sma50.pop() : latest;
+        const sma200v = sma200.length ? sma200.pop() : latest;
+        const rsi = technicalindicators.RSI.calculate({values:closes,period:14}).pop();
+        const macdOut = technicalindicators.MACD.calculate({values:closes,fastPeriod:12,slowPeriod:26,signalPeriod:9}).pop();
+        const bb = technicalindicators.BollingerBands.calculate({period:20,values:closes,stdDev:2}).pop();
+        const atr = technicalindicators.ATR.calculate({high:highs,low:lows,close:closes,period:14}).pop();
+        const adxObj = technicalindicators.ADX.calculate({high:highs,low:lows,close:closes,period:14}).pop();
+        const stochRSI = technicalindicators.StochasticRSI.calculate({values:closes,rsiPeriod:14,stochasticPeriod:14,kPeriod:3,dPeriod:3}).pop();
+        const cci = technicalindicators.CCI.calculate({high:highs,low:lows,close:closes,period:20}).pop();
+        const roc = technicalindicators.ROC.calculate({values:closes,period:12}).pop();
+        const momentum = technicalindicators.Momentum.calculate({values:closes,period:10}).pop();
+        let vwapSum=0, volSum=0;
+        for(let i=0;i<data.length;i++){ let typical = (data[i].high+data[i].low+data[i].close)/3; vwapSum+=typical*data[i].volume; volSum+=data[i].volume; }
+        const vwap = vwapSum/volSum;
+        const obvVals = technicalindicators.OBV.calculate({close:closes,volume:volumes});
+        const obvSig = getOBVSignal(obvVals);
+        const superTrendVals = computeSuperTrend(highs, lows, closes);
+        const superSig = superTrendVals ? getSuperTrendSignal(superTrendVals[superTrendVals.length-1], latest) : "NEUTRAL";
+        const psar = technicalindicators.PSAR.calculate({high:highs,low:lows,step:0.02,maxFactor:0.2}).pop();
+        const psarSig = psar ? (latest > psar ? "BUY" : "SELL") : "NEUTRAL";
+        const adxVal = adxObj ? adxObj.adx : null;
+        const signals = {
+            "EMA 20": getEMASignal(latest, ema20v), "EMA 50": getEMASignal(latest, ema50v),
+            "EMA 100": getEMASignal(latest, ema100v), "EMA 200": getEMASignal(latest, ema200v),
+            "SMA 20": getEMASignal(latest, sma20v), "SMA 50": getEMASignal(latest, sma50v),
+            "SMA 200": getEMASignal(latest, sma200v), "RSI (14)": rsi!==undefined?getRSISignal(rsi):"NEUTRAL",
+            "MACD": macdOut?getMacdSignal(macdOut.MACD, macdOut.signal):"NEUTRAL",
+            "Bollinger Bands": bb?getBollingerSignal(latest, bb.upper, bb.lower):"NEUTRAL",
+            "ATR": atr?"VOLATILE":"NEUTRAL", "ADX": (adxVal && adxVal>25)?"TRENDING":"NEUTRAL",
+            "Stochastic RSI": stochRSI?getStochRSISignal(stochRSI.stochRSI):"NEUTRAL",
+            "CCI": cci!==undefined?getCCISignal(cci):"NEUTRAL",
+            "ROC": roc!==undefined?(roc>0?"BUY":(roc<0?"SELL":"NEUTRAL")):"NEUTRAL",
+            "Momentum": momentum!==undefined?getMomentumSignal(momentum):"NEUTRAL",
+            "VWAP": vwap?(latest>vwap?"BUY":"SELL"):"NEUTRAL", "OBV": obvSig,
+            "SuperTrend": superSig, "Parabolic SAR": psarSig
+        };
+        const trendList = ["EMA 20","EMA 50","EMA 100","EMA 200","SMA 20","SMA 50","SMA 200","Parabolic SAR","SuperTrend"];
+        const momList = ["RSI (14)","MACD","Stochastic RSI","CCI","ROC","Momentum"];
+        const volList = ["VWAP","OBV"];
+        const volaList = ["Bollinger Bands","ATR","ADX"];
+        function renderCat(id, list) {
+            const cont = document.getElementById(id);
+            if(!cont) return;
+            let html="";
+            for(let ind of list){
+                let sig = signals[ind]||"NEUTRAL";
+                let cls = sig.toLowerCase().replace(/\s+/g,"-");
+                html += `<div class="indicator-row"><span class="indicator-name">${ind}</span><span class="signal-badge ${cls}">${sig}</span></div>`;
+            }
+            cont.innerHTML = html;
+        }
+        renderCat("trendIndicators", trendList);
+        renderCat("momentumIndicators", momList);
+        renderCat("volumeIndicators", volList);
+        renderCat("volatilityIndicators", volaList);
+        let buy=0,sell=0,neu=0;
+        Object.values(signals).forEach(s=>{ if(s==="BUY"||s==="STRONG BUY") buy++; else if(s==="SELL"||s==="STRONG SELL") sell++; else neu++; });
+        let bullPer = buy/(buy+sell+0.001)*100;
+        let finalRec = "";
+        if(buy>sell+2) finalRec="STRONG BUY";
+        else if(buy>sell) finalRec="BUY";
+        else if(sell>buy+2) finalRec="STRONG SELL";
+        else if(sell>buy) finalRec="SELL";
+        else finalRec="NEUTRAL";
+        document.getElementById("finalRec").innerText = finalRec;
+        document.getElementById("bullishPercent").innerText = Math.round(bullPer);
+        document.getElementById("bullishMeterFill").style.width = bullPer+"%";
+        document.getElementById("buyCount").innerText = buy;
+        document.getElementById("sellCount").innerText = sell;
+        document.getElementById("neutralCount").innerText = neu;
+        let summary = `Based on ${trendList.length+momList.length+volList.length+volaList.length} indicators, bias is ${finalRec}. `;
+        if(buy>sell) summary += `${buy} BUY vs ${sell} SELL shows bullish momentum. `;
+        else if(sell>buy) summary += `${sell} SELL signals dominate. `;
+        else summary += `Mixed signals suggest consolidation. `;
+        if(signals["RSI (14)"]==="BUY") summary+= "RSI oversold recovery potential. ";
+        if(signals["Bollinger Bands"]==="BUY") summary+= "Price near lower band. ";
+        if(signals["ADX"]==="TRENDING") summary+= "Strong trend detected. ";
+        document.getElementById("aiSummaryText").innerText = summary;
+    } catch(err) {
+        if(err.name==="AbortError") return;
+        let msg = err.message;
+        if(msg.includes("Rate limit")) msg="⏳ Rate limit exceeded. Please wait.";
+        else if(msg.includes("unavailable")) msg="🔧 Market data server busy. Try later.";
+        else if(msg.includes("Yahoo")||msg.includes("Symbol not found")) msg="❌ Invalid symbol. Try another NIFTY 500 stock.";
+        document.getElementById("aiSummaryText").innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${msg}`;
+        ["trendIndicators","momentumIndicators","volumeIndicators","volatilityIndicators"].forEach(id=>{
+            let el = document.getElementById(id);
+            if(el) el.innerHTML = '<div class="indicator-row">⚠️ Failed to load</div>';
+        });
+    } finally {
+        document.getElementById("loadingOverlay").classList.add("hidden");
+        document.getElementById("searchBtn").disabled = false;
+        if(currentAbortController && currentAbortController.signal.aborted) currentAbortController=null;
+    }
+}
+
+function handleSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        let sym = document.getElementById("stockInput").value.trim().replace(/\s+/g,"").toUpperCase();
+        if(!sym) return;
+        if(!sym.endsWith(".NS")) sym += ".NS";
+        analyzeStock(sym);
+    }, 300);
+}
+
+document.getElementById("searchBtn").addEventListener("click", handleSearch);
+document.getElementById("stockInput").addEventListener("keydown", (e) => {
+    if(e.key === "Enter") { e.preventDefault(); handleSearch(); }
+});
+
+loadNiftySymbols();
+const ph = document.getElementById("chartContainer");
+if(ph) {
+    ph.style.height = `${isMobileView() ? 320 : 430}px`;
+    ph.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8e9bb5;"><i class="fas fa-chart-line" style="margin-right:6px;"></i> Enter symbol & click Analyze</div>';
 }
