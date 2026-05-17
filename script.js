@@ -5,6 +5,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isMobile = () => window.innerWidth < 768;
 
+    // Clean symbol: remove .NS for display, add for API
+    function cleanSymbolForDisplay(symbol) {
+        return symbol.replace(/\.NS$/i, '');
+    }
+
+    function addNSForAPI(symbol) {
+        let sym = symbol.trim().toUpperCase();
+        if (!sym.endsWith('.NS')) sym += '.NS';
+        return sym;
+    }
+
+    // Load symbols for autocomplete (show without .NS for better UX)
     async function loadSymbols() {
         try {
             const res = await fetch('nifty500.json');
@@ -14,50 +26,118 @@ document.addEventListener('DOMContentLoaded', () => {
             datalist.innerHTML = '';
             symbols.forEach(sym => {
                 const opt = document.createElement('option');
-                opt.value = sym.endsWith('.NS') ? sym : `${sym}.NS`;
+                // Show clean symbol without .NS in dropdown
+                const cleanSym = sym.replace(/\.NS$/i, '');
+                opt.value = cleanSym;
                 datalist.appendChild(opt);
             });
         } catch {
-            const fallback = ['RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'HDFCBANK.NS', 'WIPRO.NS'];
+            const fallback = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'WIPRO', '360ONE', 'AWL'];
             const datalist = document.getElementById('niftySuggestions');
             datalist.innerHTML = '';
             fallback.forEach(sym => {
                 const opt = document.createElement('option');
-                opt.value = sym.endsWith('.NS') ? sym : `${sym}.NS`;
+                opt.value = sym;
                 datalist.appendChild(opt);
             });
         }
     }
 
     async function fetchStockData(symbol) {
-        const url = `/data/processed/${symbol}`;
+        // Add .NS for API call
+        const apiSymbol = addNSForAPI(symbol);
+        const url = `/data/processed/${apiSymbol}`;
         const res = await fetch(url);
         if (!res.ok) {
-            throw new Error(`No data for ${symbol}. Try: 360ONE.NS, AWL.NS`);
+            throw new Error(`No data for ${symbol}. Try: 360ONE, AWL, RELIANCE`);
         }
         const data = await res.json();
         if (!data || !data.candles) throw new Error('Invalid data format');
         return data;
     }
 
+    // ========== FIXED DRAW CHART FOR MOBILE ==========
     function drawChart(candles) {
         if (chart) { chart.remove(); chart = null; }
         const container = document.getElementById('chartContainer');
         container.innerHTML = '';
-        const height = isMobile() ? 320 : 430;
+        
+        const isMobileView = window.innerWidth < 768;
+        const chartHeight = isMobileView ? 350 : 450;
+        
+        // Sort data by time
+        const sortedData = [...candles].sort((a, b) => new Date(a.time) - new Date(b.time));
+        
         chart = LightweightCharts.createChart(container, {
-            layout: { background: { color: '#0a1020' }, textColor: '#cbd5e6' },
-            grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
-            timeScale: { timeVisible: true },
+            layout: { 
+                background: { color: '#0a1020' }, 
+                textColor: '#cbd5e6',
+                fontSize: isMobileView ? 10 : 12
+            },
+            grid: { 
+                vertLines: { color: '#1e293b', visible: !isMobileView },
+                horzLines: { color: '#1e293b' } 
+            },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            rightPriceScale: { 
+                borderColor: '#2d3a5e',
+                scaleMargins: { top: 0.1, bottom: 0.1 }
+            },
+            timeScale: { 
+                borderColor: '#2d3a5e', 
+                timeVisible: true,
+                // CRITICAL FIX FOR MOBILE: Show fewer bars to prevent squishing
+                visibleBars: isMobileView ? 30 : 60,
+                barSpacing: isMobileView ? 6 : 8
+            },
             width: container.clientWidth,
-            height: height
+            height: chartHeight
         });
-        const candleSeries = chart.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444', borderVisible: false });
-        candleSeries.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
+        
+        const candleSeries = chart.addCandlestickSeries({ 
+            upColor: '#26a69a', 
+            downColor: '#ef5350', 
+            borderVisible: false,
+            wickUpColor: '#26a69a',
+            wickDownColor: '#ef5350'
+        });
+        
+        candleSeries.setData(sortedData.map(d => ({ 
+            time: d.time, 
+            open: d.open, 
+            high: d.high, 
+            low: d.low, 
+            close: d.close 
+        })));
+        
         chart.timeScale().fitContent();
+        
+        // Add slight right margin on mobile for better view
+        if (isMobileView && chart) {
+            setTimeout(() => {
+                const visibleRange = chart.timeScale().getVisibleRange();
+                if (visibleRange) {
+                    const { from, to } = visibleRange;
+                    const timeScale = chart.timeScale();
+                    const rightEdge = timeScale.coordinateToTime(timeScale.width() - 20);
+                    if (rightEdge) {
+                        timeScale.setVisibleRange({ from, to: rightEdge });
+                    }
+                }
+            }, 100);
+        }
+        
         if (!resizeAttached) {
             window.addEventListener('resize', () => {
-                if (chart) chart.applyOptions({ width: container.clientWidth });
+                if (chart) {
+                    const newWidth = container.clientWidth;
+                    const newIsMobile = window.innerWidth < 768;
+                    chart.applyOptions({ 
+                        width: newWidth,
+                        height: newIsMobile ? 350 : 450,
+                        timeScale: { visibleBars: newIsMobile ? 30 : 60 }
+                    });
+                }
             });
             resizeAttached = true;
         }
@@ -77,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxScore = total;
         const netPercent = maxScore > 0 ? ((netScore + maxScore) / (maxScore * 2)) * 100 : 50;
 
-        // Animate odometer digits
         const buyOdo = document.getElementById('buyOdometer');
         const sellOdo = document.getElementById('sellOdometer');
         const netOdo = document.getElementById('netScoreOdometer');
@@ -85,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sellFill = document.getElementById('sellFill');
         const netFill = document.getElementById('netFill');
 
-        // Counting animation
         let currentBuy = 0;
         let currentSell = 0;
         let currentNet = 0;
@@ -111,15 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('sellCountOdo').innerText = sellCount;
     }
 
-    async function analyzeStock(symbol) {
+    async function analyzeStock(inputSymbol) {
         const loading = document.getElementById('loadingOverlay');
         const btn = document.getElementById('searchBtn');
         loading.classList.remove('hidden');
         btn.disabled = true;
 
         try {
-            const data = await fetchStockData(symbol);
-            document.getElementById('symbolTitle').innerText = symbol;
+            // Display clean symbol (without .NS) in title
+            const cleanSymbol = inputSymbol.replace(/\.NS$/i, '');
+            document.getElementById('symbolTitle').innerText = cleanSymbol;
+            
+            const data = await fetchStockData(inputSymbol);
             drawChart(data.candles);
 
             const ind = data.indicators;
@@ -184,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('sellCount').innerText = sell;
             document.getElementById('neutralCount').innerText = neutral;
 
-            // Update Odometer
             updateOdometer(buy, sell, total);
 
             let bullishPercent = total > 0 ? (buy / total) * 100 : 0;
@@ -210,9 +290,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleSearch() {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-            let sym = document.getElementById('stockInput').value.trim().replace(/\s+/g, '').toUpperCase();
+            let sym = document.getElementById('stockInput').value.trim().toUpperCase();
             if (!sym) return;
-            if (!sym.endsWith('.NS')) sym += '.NS';
+            // .NS will be added automatically in fetchStockData
             analyzeStock(sym);
         }, 300);
     }
@@ -225,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSymbols();
     const placeholder = document.getElementById('chartContainer');
     if (placeholder) {
-        placeholder.style.height = `${isMobile() ? 320 : 430}px`;
+        placeholder.style.height = `${isMobile() ? 350 : 450}px`;
         placeholder.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8e9bb5;"><i class="fas fa-chart-line" style="margin-right:6px;"></i> Enter symbol & click Analyze</div>';
     }
 });
