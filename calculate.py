@@ -11,6 +11,8 @@ MIN_DAYS = 30
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
 def ema(values, period):
+    if len(values) < period:
+        return values
     alpha = 2 / (period + 1)
     result = [values[0]]
     for val in values[1:]:
@@ -26,6 +28,8 @@ def sma(values, period):
     return result
 
 def rsi_calc(closes, period=14):
+    if len(closes) < period + 1:
+        return 50
     gains = []
     losses = []
     for i in range(1, len(closes)):
@@ -42,9 +46,14 @@ def rsi_calc(closes, period=14):
     return 100 - (100 / (1 + rs))
 
 def macd_calc(closes, fast=12, slow=26, signal=9):
+    if len(closes) < slow:
+        return closes[-1], closes[-1]
     ema_fast = ema(closes, fast)
     ema_slow = ema(closes, slow)
-    macd_line = [ema_fast[i] - ema_slow[i] for i in range(len(ema_slow))]
+    min_len = min(len(ema_fast), len(ema_slow))
+    macd_line = [ema_fast[i] - ema_slow[i] for i in range(min_len)]
+    if len(macd_line) < signal:
+        return macd_line[-1], macd_line[-1]
     signal_line = ema(macd_line, signal)
     return macd_line[-1], signal_line[-1]
 
@@ -60,6 +69,8 @@ def bollinger_bands(closes, period=20, std_dev=2):
     return upper, sma_val, lower
 
 def atr_calc(high, low, close, period=14):
+    if len(high) < period + 1:
+        return None
     true_ranges = []
     for i in range(1, len(high)):
         tr = max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1]))
@@ -86,7 +97,7 @@ def get_signal(buy_cond, sell_cond):
         return 'SELL'
     return 'NEUTRAL'
 
-files = [f for f in os.listdir(DATA_DIR) if f.endswith('.json') and f != 'processed']
+files = [f for f in os.listdir(DATA_DIR) if f.endswith('.json')]
 print(f'Found {len(files)} files to process')
 
 for filename in files:
@@ -95,36 +106,48 @@ for filename in files:
     
     try:
         with open(os.path.join(DATA_DIR, filename), 'r') as f:
-            raw = json.load(f)
+            raw_data = json.load(f)
         
-        result = raw.get('chart', {}).get('result', [])
-        if not result:
-            print(f'  No data for {ticker}')
+        # Handle both formats: direct array or Yahoo response object
+        if isinstance(raw_data, list):
+            # Data is directly an array of OHLCV objects
+            rows = raw_data
+        elif isinstance(raw_data, dict):
+            # Yahoo format with 'chart' key
+            result = raw_data.get('chart', {}).get('result', [])
+            if not result:
+                print(f'  No data for {ticker}')
+                continue
+            
+            quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
+            timestamps = result[0].get('timestamp', [])
+            
+            rows = []
+            for i in range(len(timestamps)):
+                o = quotes.get('open', [None])[i]
+                h = quotes.get('high', [None])[i]
+                l = quotes.get('low', [None])[i]
+                c = quotes.get('close', [None])[i]
+                v = quotes.get('volume', [None])[i]
+                if None not in (o, h, l, c, v):
+                    rows.append({
+                        'time': pd.Timestamp(timestamps[i], unit='s').strftime('%Y-%m-%d'),
+                        'open': float(o),
+                        'high': float(h),
+                        'low': float(l),
+                        'close': float(c),
+                        'volume': int(v)
+                    })
+        else:
+            print(f'  Unknown format for {ticker}')
             continue
-        
-        quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
-        timestamps = result[0].get('timestamp', [])
-        
-        rows = []
-        for i in range(len(timestamps)):
-            o = quotes.get('open', [None])[i]
-            h = quotes.get('high', [None])[i]
-            l = quotes.get('low', [None])[i]
-            c = quotes.get('close', [None])[i]
-            v = quotes.get('volume', [None])[i]
-            if None not in (o, h, l, c, v):
-                rows.append({
-                    'time': pd.Timestamp(timestamps[i], unit='s').strftime('%Y-%m-%d'),
-                    'open': float(o),
-                    'high': float(h),
-                    'low': float(l),
-                    'close': float(c),
-                    'volume': int(v)
-                })
         
         if len(rows) < MIN_DAYS:
             print(f'  Only {len(rows)} days, skipping')
             continue
+        
+        # Sort by time ascending
+        rows.sort(key=lambda x: x['time'])
         
         closes = [row['close'] for row in rows]
         highs = [row['high'] for row in rows]
@@ -139,16 +162,27 @@ for filename in files:
         atr_val = atr_calc(highs, lows, closes)
         obv_vals = obv_calc(closes, volumes)
         
-        # EMA calculations
+        # EMA and SMA calculations
         ema20 = ema(closes, 20)[-1] if len(closes) >= 20 else latest_close
         ema50 = ema(closes, 50)[-1] if len(closes) >= 50 else latest_close
+        ema100 = ema(closes, 100)[-1] if len(closes) >= 100 else latest_close
+        ema200 = ema(closes, 200)[-1] if len(closes) >= 200 else latest_close
         sma20 = sma(closes, 20)[-1] if len(closes) >= 20 else latest_close
+        sma50 = sma(closes, 50)[-1] if len(closes) >= 50 else latest_close
+        sma200 = sma(closes, 200)[-1] if len(closes) >= 200 else latest_close
         
         # Signals
         rsi_signal = get_signal(rsi_val < 30, rsi_val > 70)
         macd_signal_val = get_signal(macd_line > macd_signal, macd_line < macd_signal)
         bb_signal = get_signal(latest_close < bb_lower, latest_close > bb_upper) if bb_lower else 'NEUTRAL'
         ema20_signal = get_signal(latest_close > ema20, latest_close < ema20)
+        ema50_signal = get_signal(latest_close > ema50, latest_close < ema50)
+        ema100_signal = get_signal(latest_close > ema100, latest_close < ema100)
+        ema200_signal = get_signal(latest_close > ema200, latest_close < ema200)
+        sma20_signal = get_signal(latest_close > sma20, latest_close < sma20)
+        sma50_signal = get_signal(latest_close > sma50, latest_close < sma50)
+        sma200_signal = get_signal(latest_close > sma200, latest_close < sma200)
+        obv_signal = get_signal(obv_vals[-1] > obv_vals[-2], obv_vals[-1] < obv_vals[-2]) if len(obv_vals) > 1 else 'NEUTRAL'
         
         output = {
             'symbol': ticker,
@@ -159,14 +193,20 @@ for filename in files:
                 'RSI': {'value': round(rsi_val, 2), 'signal': rsi_signal},
                 'MACD': {'value': round(macd_line, 2), 'signal': macd_signal_val},
                 'EMA20': {'value': round(ema20, 2), 'signal': ema20_signal},
-                'SMA20': {'value': round(sma20, 2)},
+                'EMA50': {'value': round(ema50, 2), 'signal': ema50_signal},
+                'EMA100': {'value': round(ema100, 2), 'signal': ema100_signal},
+                'EMA200': {'value': round(ema200, 2), 'signal': ema200_signal},
+                'SMA20': {'value': round(sma20, 2), 'signal': sma20_signal},
+                'SMA50': {'value': round(sma50, 2), 'signal': sma50_signal},
+                'SMA200': {'value': round(sma200, 2), 'signal': sma200_signal},
                 'BollingerBands': {
                     'upper': round(bb_upper, 2) if bb_upper else None,
+                    'middle': round(bb_mid, 2) if bb_mid else None,
                     'lower': round(bb_lower, 2) if bb_lower else None,
                     'signal': bb_signal
                 },
                 'ATR': {'value': round(atr_val, 2) if atr_val else None},
-                'OBV': {'value': int(obv_vals[-1]) if obv_vals else None}
+                'OBV': {'value': int(obv_vals[-1]) if obv_vals else None, 'signal': obv_signal}
             }
         }
         
@@ -174,9 +214,9 @@ for filename in files:
         with open(out_path, 'w') as f:
             json.dump(output, f, indent=2)
         
-        print(f'  Saved {ticker} - RSI: {round(rsi_val, 2)}')
+        print(f'  ✅ Saved {ticker} - RSI: {round(rsi_val, 2)}, Price: {round(latest_close, 2)}')
         
     except Exception as e:
-        print(f'  Error: {e}')
+        print(f'  ❌ Error: {e}')
 
-print('\nDone!')
+print('\n✅ All indicators calculated successfully!')
