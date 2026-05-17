@@ -1,55 +1,123 @@
-name: Test Data Files
+name: Simple Indicator Calculator
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  test:
+  calc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       
-      - name: List all files in data folder
+      - name: Run simple calculator
         run: |
-          echo "=== FILES IN /data ==="
-          ls -la data/
-          echo ""
-          echo "=== FILES IN /data/processed (if exists) ==="
-          ls -la data/processed/ 2>/dev/null || echo "No processed folder yet"
-          echo ""
-          echo "=== SAMPLE FILE CONTENT (first 500 chars) ==="
-          if [ -f data/RELIANCE.NS.json ]; then
-            head -c 500 data/RELIANCE.NS.json
-          else
-            echo "RELIANCE.NS.json not found"
-            ls data/
-          fi
-      
-      - name: Test reading with Python
-        run: |
-          python3 -c "
+          python3 << 'PYTHON_SCRIPT'
 import json
 import os
 
-data_dir = 'data'
-files = [f for f in os.listdir(data_dir) if f.endswith('.json')]
-print(f'Found {len(files)} JSON files')
+# Create processed folder
+os.makedirs('data/processed', exist_ok=True)
 
-if files:
-    test_file = files[0]
-    print(f'Testing: {test_file}')
-    with open(os.path.join(data_dir, test_file), 'r') as f:
-        data = json.load(f)
-    print(f'File has keys: {list(data.keys())}')
+# Read all JSON files
+data_dir = 'data'
+files = [f for f in os.listdir(data_dir) if f.endswith('.json') and f != 'processed']
+
+print(f"Found {len(files)} files")
+
+for filename in files:
+    ticker = filename.replace('.json', '')
+    print(f"\nProcessing {ticker}...")
     
-    # Check if it's Yahoo format
-    if 'chart' in data:
-        result = data['chart'].get('result', [])
-        if result:
-            quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
-            timestamps = result[0].get('timestamp', [])
-            print(f'✅ Yahoo format: {len(timestamps)} timestamps')
-            print(f'✅ Quotes available: {len(quotes.get(\"close\", []))} close prices')
-else:
-    print('No JSON files found in data/')
-"
+    try:
+        # Read the raw file
+        with open(os.path.join(data_dir, filename), 'r') as f:
+            raw = json.load(f)
+        
+        # Extract OHLCV data
+        chart = raw.get('chart', {})
+        result = chart.get('result', [])
+        
+        if not result:
+            print(f"  No result for {ticker}")
+            continue
+        
+        quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
+        timestamps = result[0].get('timestamp', [])
+        
+        # Build data array
+        data = []
+        for i in range(len(timestamps)):
+            o = quotes.get('open', [None])[i]
+            h = quotes.get('high', [None])[i]
+            l = quotes.get('low', [None])[i]
+            c = quotes.get('close', [None])[i]
+            v = quotes.get('volume', [None])[i]
+            
+            if None not in (o, h, l, c, v):
+                data.append({
+                    'time': str(pd.Timestamp(timestamps[i], unit='s'))[:10],
+                    'open': float(o),
+                    'high': float(h),
+                    'low': float(l),
+                    'close': float(c),
+                    'volume': int(v)
+                })
+        
+        if len(data) < 30:
+            print(f"  Only {len(data)} days - skipping")
+            continue
+        
+        # Calculate simple RSI manually
+        closes = [d['close'] for d in data]
+        gains = []
+        losses = []
+        for i in range(1, len(closes)):
+            diff = closes[i] - closes[i-1]
+            gains.append(diff if diff > 0 else 0)
+            losses.append(-diff if diff < 0 else 0)
+        
+        avg_gain = sum(gains[-14:]) / 14 if len(gains) >= 14 else sum(gains) / len(gains)
+        avg_loss = sum(losses[-14:]) / 14 if len(losses) >= 14 else sum(losses) / len(losses)
+        
+        rs = avg_gain / avg_loss if avg_loss != 0 else 100
+        rsi_value = 100 - (100 / (1 + rs))
+        
+        # Simple MA
+        sma20 = sum(closes[-20:]) / 20 if len(closes) >= 20 else closes[-1]
+        
+        # Create output with calculated values
+        output = {
+            'symbol': ticker,
+            'latest_price': closes[-1],
+            'rsi': round(rsi_value, 2),
+            'sma20': round(sma20, 2),
+            'signal': 'BUY' if rsi_value < 30 else 'SELL' if rsi_value > 70 else 'NEUTRAL',
+            'candles': data[-252:]
+        }
+        
+        # Save processed file
+        out_file = os.path.join('data/processed', ticker)
+        with open(out_file, 'w') as f:
+            json.dump(output, f, indent=2)
+        
+        print(f"  ✅ Saved {ticker} - RSI: {round(rsi_value, 2)}")
+        
+    except Exception as e:
+        print(f"  ❌ Error: {str(e)}")
+
+print("\n✅ Done!")
+PYTHON_SCRIPT
+      
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/processed/
+          git commit -m "Simple calculations" || echo "No changes"
+          git push
