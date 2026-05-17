@@ -39,7 +39,10 @@
         .logo-area i { color: #3b82f6; font-size: 1.5rem; }
         .accent { color: #3b82f6; }
         .badge { background: #1e2a4a; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.7rem; }
+        
+        /* Search wrapper with custom dropdown */
         .search-wrapper {
+            position: relative;
             display: flex;
             gap: 0.5rem;
             background: rgba(0,0,0,0.5);
@@ -55,6 +58,43 @@
             width: 220px;
             outline: none;
         }
+        /* Custom dropdown for suggestions */
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-radius: 12px;
+            margin-top: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid #3b82f6;
+            display: none;
+        }
+        .suggestions-dropdown.show {
+            display: block;
+        }
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #334155;
+            font-size: 0.85rem;
+        }
+        .suggestion-item:hover {
+            background: #3b82f6;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        .suggestion-highlight {
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        
         .btn-primary {
             background: linear-gradient(135deg, #2563eb, #1e40af);
             border: none;
@@ -157,8 +197,8 @@
         <div class="search-area">
             <div class="search-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="stockInput" placeholder="Search (e.g., 360ONE, RELIANCE, TCS)" autocomplete="off" list="niftySuggestions">
-                <datalist id="niftySuggestions"></datalist>
+                <input type="text" id="stockInput" placeholder="Search NIFTY 500..." autocomplete="off">
+                <div id="suggestionsDropdown" class="suggestions-dropdown"></div>
                 <button id="searchBtn" class="btn-primary"><i class="fas fa-arrow-right"></i> Analyze</button>
             </div>
         </div>
@@ -230,18 +270,73 @@
     let chart = null;
     let resizeAttached = false;
     let searchTimeout = null;
+    let allSymbols = []; // Store all symbols from nifty500.json
     const isMobile = () => window.innerWidth < 768;
 
-    async function loadSymbols() {
-        const symbols = ['360ONE.NS', 'RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'WIPRO.NS', 'HDFCBANK.NS', 'ICICIBANK.NS'];
-        const datalist = document.getElementById('niftySuggestions');
-        datalist.innerHTML = '';
-        symbols.forEach(sym => {
-            const opt = document.createElement('option');
-            opt.value = sym.replace('.NS', '');
-            datalist.appendChild(opt);
-        });
+    // Load all symbols from nifty500.json
+    async function loadAllSymbols() {
+        try {
+            const response = await fetch('/nifty-live-data-fetcher/nifty500.json');
+            if (response.ok) {
+                const symbols = await response.json();
+                allSymbols = symbols.map(s => s.replace(/\.NS$/i, '').toUpperCase());
+                console.log(`Loaded ${allSymbols.length} symbols`);
+            } else {
+                throw new Error('Failed to load');
+            }
+        } catch (error) {
+            console.warn('Using fallback symbols');
+            allSymbols = ['360ONE', 'RELIANCE', 'TCS', 'INFY', 'WIPRO', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'LT', 'HINDUNILVR', 'AXISBANK', 'KOTAKBANK'];
+        }
     }
+
+    // Filter and show suggestions based on input
+    function showSuggestions(inputValue) {
+        const dropdown = document.getElementById('suggestionsDropdown');
+        if (!inputValue || inputValue.length < 1) {
+            dropdown.classList.remove('show');
+            return;
+        }
+        
+        const filtered = allSymbols.filter(s => s.startsWith(inputValue.toUpperCase())).slice(0, 15);
+        
+        if (filtered.length === 0) {
+            dropdown.classList.remove('show');
+            return;
+        }
+        
+        dropdown.innerHTML = filtered.map(sym => `
+            <div class="suggestion-item" onclick="selectSuggestion('${sym}')">
+                ${highlightMatch(sym, inputValue)}
+            </div>
+        `).join('');
+        
+        dropdown.classList.add('show');
+    }
+    
+    function highlightMatch(text, query) {
+        const upperText = text.toUpperCase();
+        const upperQuery = query.toUpperCase();
+        const index = upperText.indexOf(upperQuery);
+        if (index === -1) return text;
+        return text.substring(0, index) + 
+               `<span class="suggestion-highlight">${text.substring(index, index + query.length)}</span>` + 
+               text.substring(index + query.length);
+    }
+    
+    function selectSuggestion(symbol) {
+        document.getElementById('stockInput').value = symbol;
+        document.getElementById('suggestionsDropdown').classList.remove('show');
+        analyzeStock(symbol);
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const wrapper = document.querySelector('.search-wrapper');
+        if (!wrapper.contains(e.target)) {
+            document.getElementById('suggestionsDropdown').classList.remove('show');
+        }
+    });
 
     async function fetchStockData(symbol) {
         let apiSymbol = symbol.toUpperCase();
@@ -252,24 +347,19 @@
         return await res.json();
     }
 
-    // Calculate SuperTrend value from price and ATR
     function calculateSuperTrendValue(candles, period = 10, multiplier = 3) {
         if (!candles || candles.length < period) return null;
         const closes = candles.map(c => c.close);
         const highs = candles.map(c => c.high);
         const lows = candles.map(c => c.low);
         
-        // Calculate ATR
         const tr = [];
         for (let i = 1; i < highs.length; i++) {
             tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1])));
         }
         const atr = tr.slice(-period).reduce((a,b) => a + b, 0) / period;
-        
-        // Calculate SuperTrend value (lower band for uptrend)
         const hl2 = (highs[highs.length-1] + lows[lows.length-1]) / 2;
-        const superTrendValue = hl2 - multiplier * atr;
-        return superTrendValue.toFixed(2);
+        return (hl2 - multiplier * atr).toFixed(2);
     }
 
     function drawChart(candles) {
@@ -355,17 +445,14 @@
             drawChart(data.candles);
             
             const ind = data.indicators;
-            
-            // Calculate SuperTrend value from candles
             const superTrendValue = calculateSuperTrendValue(data.candles);
             
             const renderRow = (name, value, signal, extra = '') => {
                 const sigClass = getSignalClass(signal);
                 const valueText = value !== undefined && value !== null ? `(${value})` : '';
-                return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${sigClass}">${signal} ${valueText} ${extra}</span></div>`;
+                return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${sigClass}">${signal} ${valueText}</span></div>`;
             };
             
-            // Trend Indicators - NOW WITH SUPERTREND VALUE
             document.getElementById('trendIndicators').innerHTML = [
                 renderRow('EMA 20', ind.EMA20?.value, ind.EMA20?.signal),
                 renderRow('EMA 50', ind.EMA50?.value, ind.EMA50?.signal),
@@ -431,7 +518,6 @@
             if (buy > sell) summary += `${buy} BUY vs ${sell} SELL indicates bullish momentum. `;
             else if (sell > buy) summary += `${sell} SELL vs ${buy} BUY indicates bearish pressure. `;
             else summary += `Mixed signals suggest consolidation. `;
-            if (ind.SuperTrend?.signal === 'BUY') summary += `SuperTrend bullish at ${superTrendValue}. `;
             document.getElementById('aiSummaryText').innerText = summary;
             
         } catch (err) {
@@ -447,21 +533,34 @@
         searchTimeout = setTimeout(() => {
             let sym = document.getElementById('stockInput').value.trim().toUpperCase();
             if (!sym) return;
+            document.getElementById('suggestionsDropdown').classList.remove('show');
             analyzeStock(sym);
         }, 300);
     }
     
-    document.getElementById('searchBtn').addEventListener('click', handleSearch);
-    document.getElementById('stockInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); handleSearch(); }
+    // Input event for live suggestions
+    const stockInput = document.getElementById('stockInput');
+    stockInput.addEventListener('input', (e) => {
+        showSuggestions(e.target.value);
     });
     
-    loadSymbols();
-    const placeholder = document.getElementById('chartContainer');
-    if (placeholder) {
-        placeholder.style.height = `${isMobile() ? 320 : 450}px`;
-        placeholder.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8e9bb5;"><i class="fas fa-chart-line" style="margin-right:6px;"></i> Enter symbol & click Analyze</div>';
-    }
+    document.getElementById('searchBtn').addEventListener('click', handleSearch);
+    stockInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { 
+            e.preventDefault(); 
+            handleSearch();
+            document.getElementById('suggestionsDropdown').classList.remove('show');
+        }
+    });
+    
+    // Initialize
+    loadAllSymbols().then(() => {
+        const placeholder = document.getElementById('chartContainer');
+        if (placeholder) {
+            placeholder.style.height = `${isMobile() ? 320 : 450}px`;
+            placeholder.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8e9bb5;"><i class="fas fa-chart-line" style="margin-right:6px;"></i> Enter symbol & click Analyze</div>';
+        }
+    });
 </script>
 </body>
 </html>
