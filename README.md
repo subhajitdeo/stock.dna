@@ -1,1 +1,0 @@
-# nifty-live-data-fetcher
