@@ -73,8 +73,12 @@ body {
     border: none;
     color: white;
     font-size: 0.9rem;
-    width: 200px;
+    width: 220px;
     outline: none;
+}
+
+.search-wrapper input::placeholder {
+    color: #8e9bb5;
 }
 
 .btn-primary {
@@ -125,6 +129,14 @@ body {
 #chartContainer {
     border-radius: 1rem;
     overflow: hidden;
+    width: 100%;
+}
+
+/* Mobile chart container - ensures proper sizing */
+@media (max-width: 768px) {
+    #chartContainer {
+        min-height: 320px;
+    }
 }
 
 .loading-overlay {
@@ -357,20 +369,36 @@ body {
     margin-top: 0.5rem;
 }
 
+/* ========== MOBILE RESPONSIVE FIXES ========== */
 @media (max-width: 768px) {
     body { padding: 0.8rem; }
+    
     .dashboard-grid { grid-template-columns: 1fr; }
     .indicators-panel { grid-template-columns: 1fr; }
     .odometer-container { grid-template-columns: 1fr; gap: 0.8rem; }
+    
     .search-wrapper input { width: 140px; }
     .glass-header { flex-direction: column; align-items: stretch; }
     .search-wrapper { justify-content: space-between; }
+    
     .symbol-title { font-size: 1.1rem; }
     .final-recommendation { font-size: 1.4rem; }
+    
     .odometer-digits { font-size: 1.8rem; }
+    
+    /* Chart specific fixes for mobile */
+    .chart-glass-card { padding: 0.8rem; }
+    #chartContainer { min-height: 320px; }
 }
 
 @media (max-width: 480px) {
     .search-wrapper input { width: 120px; }
     .btn-primary { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+}
+
+/* For very small screens, ensure chart doesn't overflow */
+@media (max-width: 480px) {
+    #chartContainer {
+        min-height: 280px;
+    }
 }
