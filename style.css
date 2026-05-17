@@ -116,6 +116,12 @@ body {
     box-shadow: 0 4px 15px rgba(37,99,235,0.4);
 }
 
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Chart Card */
 .chart-glass-card {
     padding: 1.2rem;
