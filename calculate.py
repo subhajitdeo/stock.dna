@@ -180,57 +180,6 @@ def supertrend(high, low, close, period=10, multiplier=3):
     lower_band = hl2 - multiplier * atr_val
     return "BUY" if close[-1] > lower_band else "SELL"
 
-def ichimoku(high, low, close):
-    if len(high) < 52:
-        return "NEUTRAL"
-    # Tenkan-sen (Conversion Line): (9-period high + 9-period low)/2
-    tenkan_high = max(high[-9:])
-    tenkan_low = min(low[-9:])
-    tenkan = (tenkan_high + tenkan_low) / 2
-    
-    # Kijun-sen (Base Line): (26-period high + 26-period low)/2
-    kijun_high = max(high[-26:])
-    kijun_low = min(low[-26:])
-    kijun = (kijun_high + kijun_low) / 2
-    
-    # Senkou Span A (Leading Span A): (Tenkan + Kijun)/2 shifted 26 periods
-    senkou_a = (tenkan + kijun) / 2
-    
-    return "BUY" if close[-1] > senkou_a else "SELL"
-
-def parabolic_sar(high, low, step=0.02, max_step=0.2):
-    if len(high) < 2:
-        return "NEUTRAL"
-    # Simplified PSAR
-    up_trend = True
-    sar = low[0]
-    ep = high[0]
-    af = step
-    for i in range(1, len(high)):
-        if up_trend:
-            sar = sar + af * (ep - sar)
-            if sar > low[i]:
-                up_trend = False
-                sar = ep
-                af = step
-                ep = low[i]
-            else:
-                if high[i] > ep:
-                    ep = high[i]
-                    af = min(af + step, max_step)
-        else:
-            sar = sar + af * (ep - sar)
-            if sar < high[i]:
-                up_trend = True
-                sar = ep
-                af = step
-                ep = high[i]
-            else:
-                if low[i] < ep:
-                    ep = low[i]
-                    af = min(af + step, max_step)
-    return "BUY" if up_trend else "SELL"
-
 def vwap(candles):
     total_typical = 0
     total_volume = 0
@@ -239,56 +188,6 @@ def vwap(candles):
         total_typical += typical * c['volume']
         total_volume += c['volume']
     return total_typical / total_volume if total_volume > 0 else 0
-
-def keltner_channel(high, low, close, period=20, multiplier=2):
-    if len(close) < period:
-        return None, None, None
-    ema_val = ema(close, period)[-1]
-    atr_val = atr(high, low, close, period)
-    if atr_val is None:
-        return None, None, None
-    return ema_val + multiplier * atr_val, ema_val, ema_val - multiplier * atr_val
-
-def donchian_channel(high, low, period=20):
-    if len(high) < period:
-        return None, None
-    return max(high[-period:]), min(low[-period:])
-
-def aroon(high, low, period=25):
-    if len(high) < period:
-        return 50, 50
-    highest_idx = np.argmax(high[-period:])
-    lowest_idx = np.argmin(low[-period:])
-    aroon_up = ((period - highest_idx) / period) * 100
-    aroon_down = ((period - lowest_idx) / period) * 100
-    return aroon_up, aroon_down
-
-def ultimate_oscillator(high, low, close, period1=7, period2=14, period3=28):
-    if len(close) < period3 + 1:
-        return 50
-    bp = []
-    tr = []
-    for i in range(1, len(close)):
-        bp.append(close[i] - min(low[i], close[i-1]))
-        tr.append(max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1])))
-    avg1 = sum(bp[-period1:]) / sum(tr[-period1:]) if sum(tr[-period1:]) > 0 else 0
-    avg2 = sum(bp[-period2:]) / sum(tr[-period2:]) if sum(tr[-period2:]) > 0 else 0
-    avg3 = sum(bp[-period3:]) / sum(tr[-period3:]) if sum(tr[-period3:]) > 0 else 0
-    return ((4 * avg1) + (2 * avg2) + avg3) / 7 * 100
-
-def cmf(high, low, close, volume, period=20):
-    if len(close) < period:
-        return 0
-    mfm = []
-    mfv = []
-    for i in range(len(close)):
-        if high[i] == low[i]:
-            mf = 0
-        else:
-            mf = ((close[i] - low[i]) - (high[i] - close[i])) / (high[i] - low[i])
-        mfm.append(mf)
-        mfv.append(mf * volume[i])
-    return sum(mfv[-period:]) / sum(volume[-period:]) if sum(volume[-period:]) > 0 else 0
 
 def get_signal(buy_cond, sell_cond):
     if buy_cond:
@@ -308,36 +207,49 @@ for filename in files:
     
     try:
         with open(os.path.join(DATA_DIR, filename), 'r') as f:
-            raw = json.load(f)
-        
-        result = raw.get('chart', {}).get('result', [])
-        if not result:
-            print(f'  No data for {ticker}')
-            continue
-        
-        quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
-        timestamps = result[0].get('timestamp', [])
+            data = json.load(f)
         
         rows = []
-        for i in range(len(timestamps)):
-            o = quotes.get('open', [None])[i]
-            h = quotes.get('high', [None])[i]
-            l = quotes.get('low', [None])[i]
-            c = quotes.get('close', [None])[i]
-            v = quotes.get('volume', [None])[i]
-            if None not in (o, h, l, c, v):
-                rows.append({
-                    'time': pd.Timestamp(timestamps[i], unit='s').strftime('%Y-%m-%d'),
-                    'open': float(o),
-                    'high': float(h),
-                    'low': float(l),
-                    'close': float(c),
-                    'volume': int(v)
-                })
+        
+        # Check if data is a list (array format) OR dict (Yahoo format)
+        if isinstance(data, list):
+            # Direct array of OHLCV objects
+            rows = data
+        elif isinstance(data, dict):
+            # Yahoo format with 'chart' key
+            result = data.get('chart', {}).get('result', [])
+            if not result:
+                print(f'  No data for {ticker}')
+                continue
+            
+            quotes = result[0].get('indicators', {}).get('quote', [{}])[0]
+            timestamps = result[0].get('timestamp', [])
+            
+            for i in range(len(timestamps)):
+                o = quotes.get('open', [None])[i]
+                h = quotes.get('high', [None])[i]
+                l = quotes.get('low', [None])[i]
+                c = quotes.get('close', [None])[i]
+                v = quotes.get('volume', [None])[i]
+                if None not in (o, h, l, c, v):
+                    rows.append({
+                        'time': pd.Timestamp(timestamps[i], unit='s').strftime('%Y-%m-%d'),
+                        'open': float(o),
+                        'high': float(h),
+                        'low': float(l),
+                        'close': float(c),
+                        'volume': int(v)
+                    })
+        else:
+            print(f'  Unknown data format for {ticker}')
+            continue
         
         if len(rows) < MIN_DAYS:
             print(f'  Only {len(rows)} days, skipping')
             continue
+        
+        # Sort by time ascending
+        rows.sort(key=lambda x: x['time'])
         
         closes = [r['close'] for r in rows]
         highs = [r['high'] for r in rows]
@@ -345,7 +257,7 @@ for filename in files:
         volumes = [r['volume'] for r in rows]
         latest_close = closes[-1]
         
-        # Calculate all indicators
+        # Calculate indicators
         rsi_val = rsi(closes)
         macd_line, macd_sig, macd_hist = macd(closes)
         bb_upper, bb_mid, bb_lower = bollinger_bands(closes)
@@ -359,14 +271,7 @@ for filename in files:
         mfi_val = mfi(highs, lows, closes, volumes)
         adx_val = adx(highs, lows, closes)
         supertrend_signal = supertrend(highs, lows, closes)
-        ichimoku_signal = ichimoku(highs, lows, closes)
-        psar_signal = parabolic_sar(highs, lows)
         vwap_val = vwap(rows)
-        keltner_upper, keltner_mid, keltner_lower = keltner_channel(highs, lows, closes)
-        donchian_upper, donchian_lower = donchian_channel(highs, lows)
-        aroon_up, aroon_down = aroon(highs, lows)
-        ultimate_val = ultimate_oscillator(highs, lows, closes)
-        cmf_val = cmf(highs, lows, closes, volumes)
         
         # EMAs and SMAs
         ema20 = ema(closes, 20)[-1] if len(closes) >= 20 else latest_close
@@ -377,7 +282,7 @@ for filename in files:
         sma50 = sma(closes, 50)
         sma200 = sma(closes, 200)
         
-        # Generate signals
+        # Generate output
         output = {
             'symbol': ticker,
             'updated_at': pd.Timestamp.now().isoformat(),
@@ -387,18 +292,13 @@ for filename in files:
                 'RSI': {'value': round(rsi_val, 2), 'signal': get_signal(rsi_val < 30, rsi_val > 70)},
                 'StochasticRSI': {'value': round(stoch_rsi_val, 2), 'signal': get_signal(stoch_rsi_val < 20, stoch_rsi_val > 80)},
                 'MACD': {'value': round(macd_line, 2), 'signal': get_signal(macd_line > macd_sig, macd_line < macd_sig)},
-                'MACD_Histogram': round(macd_hist, 2),
                 'CCI': {'value': round(cci_val, 2), 'signal': get_signal(cci_val < -100, cci_val > 100)},
                 'Williams_R': {'value': round(williams_val, 2), 'signal': get_signal(williams_val < -80, williams_val > -20)},
                 'ROC': {'value': round(roc_val, 2), 'signal': get_signal(roc_val > 0, roc_val < 0)},
                 'Momentum': {'value': round(mom_val, 2), 'signal': get_signal(mom_val > 0, mom_val < 0)},
                 'MFI': {'value': round(mfi_val, 2), 'signal': get_signal(mfi_val < 20, mfi_val > 80)},
-                'Ultimate_Oscillator': {'value': round(ultimate_val, 2), 'signal': get_signal(ultimate_val < 30, ultimate_val > 70)},
                 'ADX': {'value': round(adx_val, 2) if adx_val else None, 'signal': 'STRONG' if adx_val and adx_val > 25 else 'WEAK'},
                 'SuperTrend': {'signal': supertrend_signal},
-                'Ichimoku': {'signal': ichimoku_signal},
-                'Parabolic_SAR': {'signal': psar_signal},
-                'Aroon': {'up': round(aroon_up, 2), 'down': round(aroon_down, 2), 'signal': get_signal(aroon_up > 70 and aroon_down < 30, aroon_down > 70 and aroon_up < 30)},
                 'EMA20': {'value': round(ema20, 2), 'signal': get_signal(latest_close > ema20, latest_close < ema20)},
                 'EMA50': {'value': round(ema50, 2), 'signal': get_signal(latest_close > ema50, latest_close < ema50)},
                 'EMA100': {'value': round(ema100, 2), 'signal': get_signal(latest_close > ema100, latest_close < ema100)},
@@ -409,10 +309,7 @@ for filename in files:
                 'BollingerBands': {'upper': round(bb_upper, 2) if bb_upper else None, 'middle': round(bb_mid, 2) if bb_mid else None, 'lower': round(bb_lower, 2) if bb_lower else None, 'signal': get_signal(latest_close < bb_lower, latest_close > bb_upper) if bb_lower else 'NEUTRAL'},
                 'ATR': {'value': round(atr_val, 2) if atr_val else None},
                 'OBV': {'value': int(obv_vals[-1]) if obv_vals else None, 'signal': get_signal(obv_vals[-1] > obv_vals[-2], obv_vals[-1] < obv_vals[-2]) if len(obv_vals) > 1 else 'NEUTRAL'},
-                'CMF': {'value': round(cmf_val, 4), 'signal': get_signal(cmf_val > 0, cmf_val < 0)},
-                'VWAP': {'value': round(vwap_val, 2), 'signal': get_signal(latest_close > vwap_val, latest_close < vwap_val)},
-                'KeltnerChannel': {'upper': round(keltner_upper, 2) if keltner_upper else None, 'middle': round(keltner_mid, 2) if keltner_mid else None, 'lower': round(keltner_lower, 2) if keltner_lower else None},
-                'DonchianChannel': {'upper': round(donchian_upper, 2) if donchian_upper else None, 'lower': round(donchian_lower, 2) if donchian_lower else None}
+                'VWAP': {'value': round(vwap_val, 2), 'signal': get_signal(latest_close > vwap_val, latest_close < vwap_val)}
             }
         }
         
@@ -420,7 +317,7 @@ for filename in files:
         with open(out_path, 'w') as f:
             json.dump(output, f, indent=2)
         
-        print(f'  ✅ Saved {ticker}')
+        print(f'  ✅ Saved {ticker} - RSI: {round(rsi_val, 2)}, Price: {round(latest_close, 2)}')
         
     except Exception as e:
         print(f'  ❌ Error: {e}')
