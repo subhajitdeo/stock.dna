@@ -34,8 +34,8 @@ def rsi(closes, period=14):
         diff = closes[i] - closes[i-1]
         gains.append(diff if diff > 0 else 0)
         losses.append(-diff if diff < 0 else 0)
-    avg_gain = sum(gains[-period:]) / period
-    avg_loss = sum(losses[-period:]) / period
+    avg_gain = sum(gains[-period:]) / period if len(gains) >= period else (sum(gains) / len(gains) if gains else 0)
+    avg_loss = sum(losses[-period:]) / period if len(losses) >= period else (sum(losses) / len(losses) if losses else 0)
     if avg_loss == 0:
         return 100
     rs = avg_gain / avg_loss
@@ -68,6 +68,8 @@ def atr(high, low, close, period=14):
     for i in range(1, len(high)):
         tr = max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1]))
         true_ranges.append(tr)
+    if len(true_ranges) < period:
+        return None
     return sum(true_ranges[-period:]) / period
 
 def obv(closes, volumes):
@@ -118,7 +120,10 @@ def williams_r(high, low, close, period=14):
 def roc(closes, period=12):
     if len(closes) < period + 1:
         return 0
-    return (closes[-1] - closes[-period-1]) / closes[-period-1] * 100
+    prev = closes[-period-1]
+    if prev == 0:
+        return 0
+    return (closes[-1] - prev) / prev * 100
 
 def momentum(closes, period=10):
     if len(closes) < period + 1:
@@ -159,10 +164,17 @@ def adx(high, low, close, period=14):
         down_move = low[i-1] - low[i]
         plus_dm.append(up_move if up_move > down_move and up_move > 0 else 0)
         minus_dm.append(down_move if down_move > up_move and down_move > 0 else 0)
-    atr_val = sum(tr[-period:]) / period if tr else 0
-    plus_di = 100 * (sum(plus_dm[-period:]) / period) / atr_val if atr_val != 0 else 0
-    minus_di = 100 * (sum(minus_dm[-period:]) / period) / atr_val if atr_val != 0 else 0
-    dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di) if (plus_di + minus_di) != 0 else 0
+    if len(tr) < period:
+        return None
+    atr_val = sum(tr[-period:]) / period
+    if atr_val == 0:
+        return None
+    plus_di = 100 * (sum(plus_dm[-period:]) / period) / atr_val
+    minus_di = 100 * (sum(minus_dm[-period:]) / period) / atr_val
+    di_sum = plus_di + minus_di
+    if di_sum == 0:
+        return 0
+    dx = 100 * abs(plus_di - minus_di) / di_sum
     return dx
 
 def supertrend(high, low, close, period=10, multiplier=3):
@@ -254,24 +266,27 @@ def ultimate_oscillator(high, low, close, period1=7, period2=14, period3=28):
     for i in range(1, len(close)):
         bp.append(close[i] - min(low[i], close[i-1]))
         tr.append(max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1])))
-    avg1 = sum(bp[-period1:]) / sum(tr[-period1:]) if sum(tr[-period1:]) > 0 else 0
-    avg2 = sum(bp[-period2:]) / sum(tr[-period2:]) if sum(tr[-period2:]) > 0 else 0
-    avg3 = sum(bp[-period3:]) / sum(tr[-period3:]) if sum(tr[-period3:]) > 0 else 0
+    sum_tr1 = sum(tr[-period1:]) if tr else 1
+    sum_tr2 = sum(tr[-period2:]) if tr else 1
+    sum_tr3 = sum(tr[-period3:]) if tr else 1
+    avg1 = sum(bp[-period1:]) / sum_tr1 if sum_tr1 > 0 else 0
+    avg2 = sum(bp[-period2:]) / sum_tr2 if sum_tr2 > 0 else 0
+    avg3 = sum(bp[-period3:]) / sum_tr3 if sum_tr3 > 0 else 0
     return ((4 * avg1) + (2 * avg2) + avg3) / 7 * 100
 
 def cmf(high, low, close, volume, period=20):
     if len(close) < period:
         return 0
-    mfm = []
     mfv = []
     for i in range(len(close)):
         if high[i] == low[i]:
             mf = 0
         else:
             mf = ((close[i] - low[i]) - (high[i] - close[i])) / (high[i] - low[i])
-        mfm.append(mf)
         mfv.append(mf * volume[i])
-    return sum(mfv[-period:]) / sum(volume[-period:]) if sum(volume[-period:]) > 0 else 0
+    sum_mfv = sum(mfv[-period:])
+    sum_vol = sum(volume[-period:])
+    return sum_mfv / sum_vol if sum_vol > 0 else 0
 
 def ease_of_movement(high, low, volume, period=14):
     if len(high) < period + 1:
@@ -279,7 +294,7 @@ def ease_of_movement(high, low, volume, period=14):
     emv = []
     for i in range(1, len(high)):
         distance = ((high[i] + low[i]) / 2) - ((high[i-1] + low[i-1]) / 2)
-        box_ratio = (volume[i] / 100000000) / ((high[i] - low[i]))
+        box_ratio = (volume[i] / 100000000) / ((high[i] - low[i]) + 0.0001)
         if box_ratio != 0:
             emv.append(distance / box_ratio)
     if len(emv) < period:
@@ -362,39 +377,129 @@ for filename in files:
         volumes = [r['volume'] for r in rows]
         latest_close = closes[-1]
         
-        # Calculate ALL indicators
-        rsi_val = rsi(closes)
-        stoch_rsi_val = stochastic_rsi(closes)
-        macd_line, macd_sig, macd_hist = macd(closes)
-        cci_val = cci(highs, lows, closes)
-        williams_val = williams_r(highs, lows, closes)
-        roc_val = roc(closes)
-        mom_val = momentum(closes)
-        mfi_val = mfi(highs, lows, closes, volumes)
-        adx_val = adx(highs, lows, closes)
-        supertrend_signal = supertrend(highs, lows, closes)
-        ichimoku_signal = ichimoku(highs, lows, closes)
-        psar_signal = parabolic_sar(highs, lows)
-        aroon_up, aroon_down = aroon(highs, lows)
-        ultimate_val = ultimate_oscillator(highs, lows, closes)
-        cmf_val = cmf(highs, lows, closes, volumes)
-        emv_val = ease_of_movement(highs, lows, volumes)
-        std_dev_val = std_deviation(closes)
-        vwap_val = vwap(rows)
-        obv_vals = obv(closes, volumes)
-        bb_upper, bb_mid, bb_lower = bollinger_bands(closes)
-        atr_val = atr(highs, lows, closes)
-        keltner_upper, keltner_mid, keltner_lower = keltner_channel(highs, lows, closes)
-        donchian_upper, donchian_lower = donchian_channel(highs, lows)
+        # Calculate indicators safely
+        try:
+            rsi_val = rsi(closes)
+        except:
+            rsi_val = 50
+        try:
+            stoch_rsi_val = stochastic_rsi(closes)
+        except:
+            stoch_rsi_val = 50
+        try:
+            macd_line, macd_sig, macd_hist = macd(closes)
+        except:
+            macd_line, macd_sig, macd_hist = latest_close, latest_close, 0
+        try:
+            cci_val = cci(highs, lows, closes)
+        except:
+            cci_val = 0
+        try:
+            williams_val = williams_r(highs, lows, closes)
+        except:
+            williams_val = -50
+        try:
+            roc_val = roc(closes)
+        except:
+            roc_val = 0
+        try:
+            mom_val = momentum(closes)
+        except:
+            mom_val = 0
+        try:
+            mfi_val = mfi(highs, lows, closes, volumes)
+        except:
+            mfi_val = 50
+        try:
+            adx_val = adx(highs, lows, closes)
+        except:
+            adx_val = None
+        try:
+            supertrend_signal = supertrend(highs, lows, closes)
+        except:
+            supertrend_signal = "NEUTRAL"
+        try:
+            ichimoku_signal = ichimoku(highs, lows, closes)
+        except:
+            ichimoku_signal = "NEUTRAL"
+        try:
+            psar_signal = parabolic_sar(highs, lows)
+        except:
+            psar_signal = "NEUTRAL"
+        try:
+            aroon_up, aroon_down = aroon(highs, lows)
+        except:
+            aroon_up, aroon_down = 50, 50
+        try:
+            ultimate_val = ultimate_oscillator(highs, lows, closes)
+        except:
+            ultimate_val = 50
+        try:
+            cmf_val = cmf(highs, lows, closes, volumes)
+        except:
+            cmf_val = 0
+        try:
+            emv_val = ease_of_movement(highs, lows, volumes)
+        except:
+            emv_val = 0
+        try:
+            std_dev_val = std_deviation(closes)
+        except:
+            std_dev_val = 0
+        try:
+            vwap_val = vwap(rows)
+        except:
+            vwap_val = latest_close
+        try:
+            obv_vals = obv(closes, volumes)
+        except:
+            obv_vals = [0]
+        try:
+            bb_upper, bb_mid, bb_lower = bollinger_bands(closes)
+        except:
+            bb_upper, bb_mid, bb_lower = None, None, None
+        try:
+            atr_val = atr(highs, lows, closes)
+        except:
+            atr_val = None
+        try:
+            keltner_upper, keltner_mid, keltner_lower = keltner_channel(highs, lows, closes)
+        except:
+            keltner_upper, keltner_mid, keltner_lower = None, None, None
+        try:
+            donchian_upper, donchian_lower = donchian_channel(highs, lows)
+        except:
+            donchian_upper, donchian_lower = None, None
         
-        # EMAs and SMAs
-        ema20 = ema(closes, 20)[-1] if len(closes) >= 20 else latest_close
-        ema50 = ema(closes, 50)[-1] if len(closes) >= 50 else latest_close
-        ema100 = ema(closes, 100)[-1] if len(closes) >= 100 else latest_close
-        ema200 = ema(closes, 200)[-1] if len(closes) >= 200 else latest_close
-        sma20 = sma(closes, 20)
-        sma50 = sma(closes, 50)
-        sma200 = sma(closes, 200)
+        # EMAs and SMAs (with safe fallbacks)
+        try:
+            ema20 = ema(closes, 20)[-1] if len(closes) >= 20 else latest_close
+        except:
+            ema20 = latest_close
+        try:
+            ema50 = ema(closes, 50)[-1] if len(closes) >= 50 else latest_close
+        except:
+            ema50 = latest_close
+        try:
+            ema100 = ema(closes, 100)[-1] if len(closes) >= 100 else latest_close
+        except:
+            ema100 = latest_close
+        try:
+            ema200 = ema(closes, 200)[-1] if len(closes) >= 200 else latest_close
+        except:
+            ema200 = latest_close
+        try:
+            sma20 = sma(closes, 20)
+        except:
+            sma20 = latest_close
+        try:
+            sma50 = sma(closes, 50)
+        except:
+            sma50 = latest_close
+        try:
+            sma200 = sma(closes, 200)
+        except:
+            sma200 = latest_close
         
         output = {
             'symbol': ticker,
