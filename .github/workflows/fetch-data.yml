@@ -2,7 +2,7 @@ name: Fetch Stock Data
 
 on:
   schedule:
-    # 5 PM IST = 10:30 UTC
+    # 4:00 PM IST = 10:30 UTC
     - cron: '30 10 * * *'
   workflow_dispatch:
 
@@ -15,6 +15,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history to avoid conflicts
+
+      - name: Configure git for pulling
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase || true
 
       - name: Create data directory
         run: mkdir -p data
@@ -37,7 +45,6 @@ jobs:
           
           TOTAL_SYMBOLS=$(echo "$SYMBOLS" | wc -l)
           echo "📊 Found $TOTAL_SYMBOLS symbols"
-          echo "⏱️  Will take approximately $(echo "scale=1; $TOTAL_SYMBOLS * 0.7 / 60" | bc) minutes"
           
           # Calculate date range
           END=$(date +%s)
@@ -46,6 +53,7 @@ jobs:
           SUCCESS=0
           FAILED=0
           COUNTER=0
+          FAILED_SYMBOLS=""
           
           for SYMBOL in $SYMBOLS; do
             # Auto-add .NS if not present
@@ -69,8 +77,9 @@ jobs:
             # Check if response contains error
             if echo "$RESPONSE" | jq -e '.chart.error' > /dev/null 2>&1; then
               ERROR_MSG=$(echo "$RESPONSE" | jq -r '.chart.error.description // "Unknown error"')
-              echo "❌ Yahoo error for $SYM: $ERROR_MSG"
+              echo "⚠️ Skipping $SYM: $ERROR_MSG"
               FAILED=$((FAILED + 1))
+              FAILED_SYMBOLS="$FAILED_SYMBOLS\n  - $SYM: $ERROR_MSG"
             else
               # Extract OHLCV data
               echo "$RESPONSE" | jq -c '
@@ -87,40 +96,66 @@ jobs:
                 | map(select(.open != null and .high != null and .low != null and .close != null and .volume != null))
               ' > "data/${SYM}.tmp"
               
-              # Validate and save
-              if [ -s "data/${SYM}.tmp" ] && jq empty "data/${SYM}.tmp" 2>/dev/null && [ "$(jq length "data/${SYM}.tmp")" -gt 30 ]; then
-                mv "data/${SYM}.tmp" "data/${SYM}.json"
-                COUNT=$(jq length "data/${SYM}.json")
-                echo "✅ Saved $SYM - $COUNT trading days"
-                SUCCESS=$((SUCCESS + 1))
+              # Validate and save (min 30 days required)
+              if [ -s "data/${SYM}.tmp" ] && jq empty "data/${SYM}.tmp" 2>/dev/null; then
+                DATA_COUNT=$(jq length "data/${SYM}.tmp")
+                if [ "$DATA_COUNT" -gt 30 ]; then
+                  mv "data/${SYM}.tmp" "data/${SYM}.json"
+                  echo "✅ Saved $SYM - $DATA_COUNT trading days"
+                  SUCCESS=$((SUCCESS + 1))
+                else
+                  echo "⚠️ Insufficient data for $SYM: only $DATA_COUNT days (need 30+), skipping"
+                  rm -f "data/${SYM}.tmp"
+                  FAILED=$((FAILED + 1))
+                  FAILED_SYMBOLS="$FAILED_SYMBOLS\n  - $SYM: Only $DATA_COUNT days of data"
+                fi
               else
-                echo "❌ Invalid data for $SYM"
+                echo "⚠️ Invalid data for $SYM, skipping"
                 rm -f "data/${SYM}.tmp"
                 FAILED=$((FAILED + 1))
+                FAILED_SYMBOLS="$FAILED_SYMBOLS\n  - $SYM: Invalid data format"
               fi
             fi
             
-            # ⏱️ RATE LIMITING: Wait 1 seconds before next request
-            # This prevents Yahoo from blocking you
+            # Rate limiting: Wait 0.7 seconds between requests
             if [ $COUNTER -lt $TOTAL_SYMBOLS ]; then
-              echo "⏳ Waiting 1 seconds before next request..."
-              sleep 1
+              sleep 0.7
             fi
           done
           
           echo ""
           echo "========================================="
-          echo "📊 SUMMARY: $SUCCESS successful, $FAILED failed out of $TOTAL_SYMBOLS"
+          echo "📊 FETCH SUMMARY:"
+          echo "   ✅ Successful: $SUCCESS symbols"
+          echo "   ⚠️ Failed/Skipped: $FAILED symbols"
+          echo "   📈 Total processed: $TOTAL_SYMBOLS symbols"
           echo "========================================="
+          
+          if [ ! -z "$FAILED_SYMBOLS" ]; then
+            echo ""
+            echo "⚠️ FAILED SYMBOLS:"
+            echo -e "$FAILED_SYMBOLS"
+            echo ""
+          fi
+          
+          # Exit with success even if some failed - we still saved partial data
+          echo "✅ Fetch completed with partial data"
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Pull latest changes first to avoid conflicts
+          git pull origin main --rebase || true
+          
+          # Add all data files
           git add data/
+          
+          # Check if there are changes
           if git diff --cached --quiet; then
             echo "No new data to commit"
           else
             git commit -m "Auto-update stock data [skip ci]"
-            git push
+            git push origin main
           fi
