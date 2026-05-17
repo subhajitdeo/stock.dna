@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Nexus Charts | Technical Analysis</title>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0a0f1e;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             color: #eef2ff;
             padding: 20px;
         }
@@ -51,100 +51,37 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .search-box button:disabled { opacity: 0.5; }
         .chart-card {
             background: rgba(18, 25, 45, 0.9);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
         }
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
+        .chart-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
         #chartContainer { width: 100%; height: 450px; }
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .indicators-panel {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .indicators-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .indicator-card {
             background: rgba(18, 25, 45, 0.9);
             border-radius: 16px;
             padding: 16px;
         }
-        .indicator-card h3 {
-            font-size: 14px;
-            margin-bottom: 12px;
-            color: #94a3b8;
-            border-left: 3px solid #3b82f6;
-            padding-left: 10px;
-        }
-        .indicator-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #1e293b;
-            font-size: 13px;
-        }
+        .indicator-card h3 { font-size: 14px; margin-bottom: 12px; color: #94a3b8; border-left: 3px solid #3b82f6; padding-left: 10px; }
+        .indicator-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
         .signal-buy { color: #22c55e; font-weight: bold; }
         .signal-sell { color: #ef4444; font-weight: bold; }
         .signal-neutral { color: #f59e0b; }
-        .signal-strong-buy { color: #16a34a; font-weight: bold; }
-        .signal-strong-sell { color: #dc2626; font-weight: bold; }
         .verdict-card {
             background: rgba(18, 25, 45, 0.9);
             border-radius: 16px;
             padding: 20px;
             text-align: center;
         }
-        .final-recommendation {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-        .meter-bar {
-            background: #1e293b;
-            border-radius: 20px;
-            height: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        .meter-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
-            width: 0%;
-            transition: width 0.5s;
-        }
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 15px 0;
-        }
-        .summary {
-            margin-top: 15px;
-            padding: 12px;
-            background: #1e293b;
-            border-radius: 12px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1e293b;
-            padding: 20px 40px;
-            border-radius: 12px;
-            display: none;
-        }
+        .final-rec { font-size: 32px; font-weight: bold; margin: 15px 0; }
+        .meter-bar { background: #1e293b; border-radius: 20px; height: 10px; overflow: hidden; margin: 10px 0; }
+        .meter-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); width: 0%; transition: width 0.5s; }
+        .stats { display: flex; justify-content: space-around; margin: 15px 0; }
+        .summary { margin-top: 15px; padding: 12px; background: #1e293b; border-radius: 12px; font-size: 13px; line-height: 1.5; }
         @media (max-width: 768px) {
             .dashboard { grid-template-columns: 1fr; }
             .indicators-panel { grid-template-columns: 1fr; }
@@ -157,31 +94,28 @@
     <div class="header">
         <div class="logo">Nexus<span>Charts</span></div>
         <div class="search-box">
-            <input type="text" id="symbolInput" placeholder="RELIANCE.NS, TCS.NS..." list="symbols">
+            <input type="text" id="symbolInput" placeholder="360ONE.NS, AWL.NS..." list="symbols">
             <datalist id="symbols"></datalist>
             <button id="analyzeBtn">Analyze</button>
         </div>
     </div>
 
     <div class="chart-card">
-        <div class="chart-header">
-            <div id="symbolTitle">Select a symbol</div>
-            <div>Daily • 1 Year</div>
-        </div>
+        <div class="chart-header"><div id="symbolTitle">Select a symbol</div><div>Daily • 1 Year</div></div>
         <div id="chartContainer"></div>
     </div>
 
     <div class="dashboard">
         <div class="indicators-panel">
-            <div class="indicator-card"><h3>📈 Trend Indicators</h3><div id="trendIndicators"></div></div>
-            <div class="indicator-card"><h3>⚡ Momentum Indicators</h3><div id="momentumIndicators"></div></div>
-            <div class="indicator-card"><h3>📊 Volume Indicators</h3><div id="volumeIndicators"></div></div>
-            <div class="indicator-card"><h3>📉 Volatility Indicators</h3><div id="volatilityIndicators"></div></div>
+            <div class="indicator-card"><h3>📈 Trend</h3><div id="trendIndicators"></div></div>
+            <div class="indicator-card"><h3>⚡ Momentum</h3><div id="momentumIndicators"></div></div>
+            <div class="indicator-card"><h3>📊 Volume</h3><div id="volumeIndicators"></div></div>
+            <div class="indicator-card"><h3>📉 Volatility</h3><div id="volatilityIndicators"></div></div>
         </div>
         
         <div class="verdict-card">
             <h3>🤖 Overall Verdict</h3>
-            <div id="finalRec" class="final-recommendation">—</div>
+            <div id="finalRec" class="final-rec">—</div>
             <div class="meter-bar"><div id="meterFill" class="meter-fill"></div></div>
             <div class="stats">
                 <span>🟢 BUY: <span id="buyCount">0</span></span>
@@ -195,27 +129,12 @@
 
 <script>
     let chart = null;
-
-    async function loadSymbols() {
-        try {
-            const res = await fetch('data/processed/');
-            // Can't list directory easily, so use a predefined list from your CSV
-            const symbols = ['RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'HDFCBANK.NS', 'AWL.NS'];
-            const datalist = document.getElementById('symbols');
-            symbols.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                datalist.appendChild(opt);
-            });
-        } catch(e) { console.log(e); }
-    }
+    const symbols = ['360ONE.NS', 'AWL.NS', 'RELIANCE.NS', 'TCS.NS', 'INFY.NS'];
 
     function getSignalClass(signal) {
         const s = (signal || 'NEUTRAL').toUpperCase();
         if (s === 'BUY') return 'signal-buy';
-        if (s === 'STRONG BUY') return 'signal-strong-buy';
         if (s === 'SELL') return 'signal-sell';
-        if (s === 'STRONG SELL') return 'signal-strong-sell';
         return 'signal-neutral';
     }
 
@@ -229,16 +148,10 @@
             width: container.clientWidth,
             height: window.innerWidth < 768 ? 320 : 450
         });
-        const candleSeries = chart.addCandlestickSeries({
-            upColor: '#22c55e', downColor: '#ef4444', borderVisible: false
-        });
-        candleSeries.setData(candles.map(c => ({
-            time: c.time, open: c.open, high: c.high, low: c.low, close: c.close
-        })));
+        const candleSeries = chart.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444', borderVisible: false });
+        candleSeries.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
         chart.timeScale().fitContent();
-        window.addEventListener('resize', () => {
-            if (chart) chart.applyOptions({ width: container.clientWidth });
-        });
+        window.addEventListener('resize', () => { if (chart) chart.applyOptions({ width: container.clientWidth }); });
     }
 
     async function analyze() {
@@ -254,85 +167,76 @@
             if (!res.ok) throw new Error('No data available');
             const data = await res.json();
             
-            // Draw chart
             drawChart(data.candles);
-            
             const ind = data.indicators;
             
-            // Trend indicators
             document.getElementById('trendIndicators').innerHTML = `
                 <div class="indicator-row"><span>EMA 20</span><span class="${getSignalClass(ind.EMA20?.signal)}">${ind.EMA20?.signal || 'NEUTRAL'}</span></div>
                 <div class="indicator-row"><span>EMA 50</span><span class="${getSignalClass(ind.EMA50?.signal)}">${ind.EMA50?.signal || 'NEUTRAL'}</span></div>
-                <div class="indicator-row"><span>EMA 100</span><span class="${getSignalClass(ind.EMA100?.signal)}">${ind.EMA100?.signal || 'NEUTRAL'}</span></div>
                 <div class="indicator-row"><span>EMA 200</span><span class="${getSignalClass(ind.EMA200?.signal)}">${ind.EMA200?.signal || 'NEUTRAL'}</span></div>
-                <div class="indicator-row"><span>SMA 20</span><span class="${getSignalClass(ind.SMA20?.signal)}">${ind.SMA20?.signal || 'NEUTRAL'}</span></div>
                 <div class="indicator-row"><span>SMA 50</span><span class="${getSignalClass(ind.SMA50?.signal)}">${ind.SMA50?.signal || 'NEUTRAL'}</span></div>
-                <div class="indicator-row"><span>SMA 200</span><span class="${getSignalClass(ind.SMA200?.signal)}">${ind.SMA200?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>ADX</span><span>${ind.ADX?.value || 'N/A'} (${ind.ADX?.signal || 'WEAK'})</span></div>
+                <div class="indicator-row"><span>SuperTrend</span><span class="${getSignalClass(ind.SuperTrend?.signal)}">${ind.SuperTrend?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>Ichimoku</span><span class="${getSignalClass(ind.Ichimoku?.signal)}">${ind.Ichimoku?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>Parabolic SAR</span><span class="${getSignalClass(ind.Parabolic_SAR?.signal)}">${ind.Parabolic_SAR?.signal || 'NEUTRAL'}</span></div>
             `;
             
-            // Momentum indicators
             document.getElementById('momentumIndicators').innerHTML = `
                 <div class="indicator-row"><span>RSI (14)</span><span class="${getSignalClass(ind.RSI?.signal)}">${ind.RSI?.signal || 'NEUTRAL'} (${ind.RSI?.value})</span></div>
+                <div class="indicator-row"><span>Stochastic RSI</span><span class="${getSignalClass(ind.StochasticRSI?.signal)}">${ind.StochasticRSI?.signal || 'NEUTRAL'}</span></div>
                 <div class="indicator-row"><span>MACD</span><span class="${getSignalClass(ind.MACD?.signal)}">${ind.MACD?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>CCI</span><span class="${getSignalClass(ind.CCI?.signal)}">${ind.CCI?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>Williams %R</span><span class="${getSignalClass(ind.Williams_R?.signal)}">${ind.Williams_R?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>ROC</span><span class="${getSignalClass(ind.ROC?.signal)}">${ind.ROC?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>MFI</span><span class="${getSignalClass(ind.MFI?.signal)}">${ind.MFI?.signal || 'NEUTRAL'} (${ind.MFI?.value})</span></div>
             `;
             
-            // Volume indicators
             document.getElementById('volumeIndicators').innerHTML = `
                 <div class="indicator-row"><span>OBV</span><span class="${getSignalClass(ind.OBV?.signal)}">${ind.OBV?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>CMF</span><span class="${getSignalClass(ind.CMF?.signal)}">${ind.CMF?.signal || 'NEUTRAL'}</span></div>
+                <div class="indicator-row"><span>VWAP</span><span class="${getSignalClass(ind.VWAP?.signal)}">${ind.VWAP?.signal || 'NEUTRAL'}</span></div>
             `;
             
-            // Volatility indicators
             document.getElementById('volatilityIndicators').innerHTML = `
                 <div class="indicator-row"><span>Bollinger Bands</span><span class="${getSignalClass(ind.BollingerBands?.signal)}">${ind.BollingerBands?.signal || 'NEUTRAL'}</span></div>
-                <div class="indicator-row"><span>ATR</span><span>${ind.ATR?.value?.toFixed(2) || 'N/A'}</span></div>
+                <div class="indicator-row"><span>ATR</span><span>${ind.ATR?.value || 'N/A'}</span></div>
+                <div class="indicator-row"><span>Std Deviation</span><span>${ind.StandardDeviation?.value || 'N/A'}</span></div>
             `;
             
             // Count signals
-            const allSignals = [
-                ind.EMA20?.signal, ind.EMA50?.signal, ind.EMA100?.signal, ind.EMA200?.signal,
-                ind.SMA20?.signal, ind.SMA50?.signal, ind.SMA200?.signal,
-                ind.RSI?.signal, ind.MACD?.signal, ind.BollingerBands?.signal
+            const all = [
+                ind.EMA20?.signal, ind.EMA50?.signal, ind.EMA200?.signal, ind.SMA50?.signal,
+                ind.SuperTrend?.signal, ind.Ichimoku?.signal, ind.RSI?.signal, ind.MACD?.signal,
+                ind.CCI?.signal, ind.ROC?.signal, ind.OBV?.signal, ind.CMF?.signal, ind.VWAP?.signal
             ];
-            
-            let buy = allSignals.filter(s => s === 'BUY' || s === 'STRONG BUY').length;
-            let sell = allSignals.filter(s => s === 'SELL' || s === 'STRONG SELL').length;
-            let neutral = allSignals.filter(s => s === 'NEUTRAL' || !s).length;
+            let buy = all.filter(s => s === 'BUY').length;
+            let sell = all.filter(s => s === 'SELL').length;
+            let neutral = all.filter(s => s === 'NEUTRAL' || !s).length;
             
             document.getElementById('buyCount').innerText = buy;
             document.getElementById('sellCount').innerText = sell;
             document.getElementById('neutralCount').innerText = neutral;
             
-            let finalRec = '';
-            if (buy > sell + 2) finalRec = 'STRONG BUY';
-            else if (buy > sell) finalRec = 'BUY';
-            else if (sell > buy + 2) finalRec = 'STRONG SELL';
-            else if (sell > buy) finalRec = 'SELL';
-            else finalRec = 'NEUTRAL';
+            let final = buy > sell + 2 ? 'STRONG BUY' : buy > sell ? 'BUY' : sell > buy + 2 ? 'STRONG SELL' : sell > buy ? 'SELL' : 'NEUTRAL';
+            document.getElementById('finalRec').innerText = final;
+            document.getElementById('meterFill').style.width = (buy / (buy + sell + 0.001) * 100) + '%';
             
-            document.getElementById('finalRec').innerText = finalRec;
-            const bullPercent = (buy / (buy + sell + 0.001)) * 100;
-            document.getElementById('meterFill').style.width = bullPercent + '%';
-            
-            // AI Summary
-            document.getElementById('summary').innerHTML = `
-                <strong>AI Analysis:</strong> ${finalRec} signal with ${buy} BUY vs ${sell} SELL. 
-                RSI is ${ind.RSI?.value} (${ind.RSI?.signal}), 
-                price is ${data.latest_price > ind.EMA20?.value ? 'above' : 'below'} EMA20.
-            `;
-            
+            document.getElementById('summary').innerHTML = `🎯 ${final} | ${buy} BUY vs ${sell} SELL | RSI ${ind.RSI?.value} | Price ${data.latest_price > ind.EMA20?.value ? 'above' : 'below'} EMA20`;
         } catch(err) {
-            document.getElementById('summary').innerHTML = `Error: ${err.message}. Try RELIANCE.NS or AWL.NS`;
+            document.getElementById('summary').innerHTML = `❌ ${err.message}. Try: ${symbols.join(', ')}`;
         } finally {
             document.getElementById('analyzeBtn').disabled = false;
         }
     }
     
-    document.getElementById('analyzeBtn').addEventListener('click', analyze);
-    document.getElementById('symbolInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') analyze();
+    symbols.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        document.getElementById('symbols').appendChild(opt);
     });
     
-    loadSymbols();
+    document.getElementById('analyzeBtn').addEventListener('click', analyze);
+    document.getElementById('symbolInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') analyze(); });
 </script>
 </body>
 </html>
