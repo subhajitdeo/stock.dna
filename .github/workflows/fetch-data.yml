@@ -100,11 +100,11 @@ jobs:
               fi
             fi
             
-            # ⏱️ RATE LIMITING: Wait 0.7 seconds before next request
+            # ⏱️ RATE LIMITING: Wait 1 seconds before next request
             # This prevents Yahoo from blocking you
             if [ $COUNTER -lt $TOTAL_SYMBOLS ]; then
-              echo "⏳ Waiting 0.7 seconds before next request..."
-              sleep 0.7
+              echo "⏳ Waiting 1 seconds before next request..."
+              sleep 1
             fi
           done
           
