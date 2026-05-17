@@ -8,15 +8,9 @@
     <title>Nexus Charts | NIFTY 500 Technical Analysis</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Lightweight Charts CDN - for candlestick chart -->
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
             font-family: 'Inter', sans-serif;
@@ -24,13 +18,7 @@
             padding: 1rem;
             min-height: 100vh;
         }
-
-        .app-container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        /* Glassmorphism Components */
+        .app-container { max-width: 1600px; margin: 0 auto; }
         .glass-header, .chart-glass-card, .category-card, .recommendation-card, .ai-summary-card, .odometer-card {
             background: rgba(12, 20, 30, 0.55);
             backdrop-filter: blur(12px);
@@ -38,8 +26,6 @@
             border: 1px solid rgba(59, 130, 246, 0.25);
             transition: all 0.2s;
         }
-
-        /* Header */
         .glass-header {
             padding: 1rem;
             display: flex;
@@ -49,27 +35,10 @@
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-        .logo-area i {
-            color: #3b82f6;
-            font-size: 1.5rem;
-        }
+        .logo-area { display: flex; align-items: center; gap: 0.5rem; font-size: 1.3rem; font-weight: 700; }
+        .logo-area i { color: #3b82f6; font-size: 1.5rem; }
         .accent { color: #3b82f6; }
-        .badge {
-            background: #1e2a4a;
-            padding: 0.2rem 0.7rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-        }
-
-        /* Search Bar */
+        .badge { background: #1e2a4a; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.7rem; }
         .search-wrapper {
             display: flex;
             gap: 0.5rem;
@@ -96,23 +65,9 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        /* Chart Card */
-        .chart-glass-card {
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .chart-glass-card { padding: 1rem; margin-bottom: 1.5rem; position: relative; }
+        .chart-header { display: flex; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; }
         .symbol-title {
             font-weight: 700;
             font-size: 1.3rem;
@@ -121,13 +76,7 @@
             background-clip: text;
             color: transparent;
         }
-        #chartContainer {
-            border-radius: 1rem;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        /* Loading Overlay */
+        #chartContainer { border-radius: 1rem; overflow: hidden; width: 100%; }
         .loading-overlay {
             position: absolute;
             top: 0;
@@ -144,174 +93,41 @@
             gap: 1rem;
             z-index: 20;
         }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #2c3e66;
-            border-top: 3px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        .spinner { width: 40px; height: 40px; border: 3px solid #2c3e66; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
-
-        /* Odometer Cards */
-        .odometer-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .odometer-card {
-            padding: 1.2rem;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-        .odometer-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(59, 130, 246, 0.5);
-        }
-        .odometer-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #94a3b8;
-            margin-bottom: 0.5rem;
-        }
-        .odometer-wrapper {
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            gap: 0.2rem;
-            margin-bottom: 0.8rem;
-        }
-        .odometer-digits {
-            font-size: 2.5rem;
-            font-weight: 800;
-            font-family: 'Inter', monospace;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .odometer-unit {
-            font-size: 0.8rem;
-            color: #64748b;
-            font-weight: 500;
-        }
-        .odometer-progress {
-            background: #1e293b;
-            border-radius: 30px;
-            height: 6px;
-            overflow: hidden;
-            margin: 0.5rem 0;
-        }
-        .odometer-fill {
-            height: 100%;
-            border-radius: 30px;
-            transition: width 0.8s cubic-bezier(0.22, 0.97, 0.36, 1.02);
-            width: 0%;
-        }
+        .odometer-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .odometer-card { padding: 1.2rem; text-align: center; transition: transform 0.2s; }
+        .odometer-card:hover { transform: translateY(-3px); border-color: rgba(59, 130, 246, 0.5); }
+        .odometer-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #94a3b8; margin-bottom: 0.5rem; }
+        .odometer-wrapper { display: flex; align-items: baseline; justify-content: center; gap: 0.2rem; margin-bottom: 0.8rem; }
+        .odometer-digits { font-size: 2.5rem; font-weight: 800; font-family: 'Inter', monospace; letter-spacing: 2px; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .odometer-unit { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+        .odometer-progress { background: #1e293b; border-radius: 30px; height: 6px; overflow: hidden; margin: 0.5rem 0; }
+        .odometer-fill { height: 100%; border-radius: 30px; transition: width 0.8s cubic-bezier(0.22, 0.97, 0.36, 1.02); width: 0%; }
         .buy-fill { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
         .sell-fill { background: linear-gradient(90deg, #ef4444, #f87171); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
         .net-fill { background: linear-gradient(90deg, #3b82f6, #a855f7); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        .odometer-stats {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            margin-top: 0.5rem;
-        }
-
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            gap: 1rem;
-        }
-        .indicators-panel {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
-        .category-card, .recommendation-card, .ai-summary-card {
-            padding: 1rem;
-        }
-        .cat-header {
-            font-weight: 600;
-            border-left: 3px solid #3b82f6;
-            padding-left: 0.6rem;
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .indicators-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        .indicator-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-            padding: 0.2rem 0;
-            border-bottom: 1px dashed #1e2a44;
-        }
-        .indicator-name {
-            font-weight: 500;
-            color: #bfd9ff;
-        }
-        .signal-badge {
-            font-weight: 700;
-            padding: 0.1rem 0.6rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-        }
+        .odometer-stats { font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem; }
+        .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; }
+        .indicators-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .category-card, .recommendation-card, .ai-summary-card { padding: 1rem; }
+        .cat-header { font-weight: 600; border-left: 3px solid #3b82f6; padding-left: 0.6rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+        .indicators-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .indicator-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.2rem 0; border-bottom: 1px dashed #1e2a44; }
+        .indicator-name { font-weight: 500; color: #bfd9ff; }
+        .signal-badge { font-weight: 700; padding: 0.1rem 0.6rem; border-radius: 30px; font-size: 0.7rem; }
         .buy { background: #10b98120; color: #34d399; border: 1px solid #10b981; }
         .strong-buy { background: #04785730; color: #6ee7b7; border: 1px solid #059669; }
         .sell { background: #ef444420; color: #f87171; border: 1px solid #ef4444; }
         .strong-sell { background: #b91c1c30; color: #fca5a5; border: 1px solid #dc2626; }
         .neutral { background: #47556930; color: #cbd5e1; border: 1px solid #6b7280; }
-
-        .final-recommendation {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin: 0.5rem 0;
-        }
-        .strength-meter-wrapper {
-            margin: 0.8rem 0;
-        }
-        .meter-bar-bg {
-            background: #1e293b;
-            border-radius: 30px;
-            height: 8px;
-            overflow: hidden;
-        }
-        .meter-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #a855f7);
-            border-radius: 30px;
-            transition: width 0.5s;
-        }
-        .signal-stats {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 0.8rem;
-            font-size: 0.8rem;
-        }
-        .ai-summary-card .summary-text {
-            line-height: 1.4;
-            font-size: 0.85rem;
-            color: #ccdeff;
-            margin-top: 0.5rem;
-        }
-
-        /* Mobile Responsive */
+        .final-recommendation { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; }
+        .strength-meter-wrapper { margin: 0.8rem 0; }
+        .meter-bar-bg { background: #1e293b; border-radius: 30px; height: 8px; overflow: hidden; }
+        .meter-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #a855f7); border-radius: 30px; transition: width 0.5s; }
+        .signal-stats { display: flex; justify-content: space-around; margin-top: 0.8rem; font-size: 0.8rem; }
+        .ai-summary-card .summary-text { line-height: 1.4; font-size: 0.85rem; color: #ccdeff; margin-top: 0.5rem; }
         @media (max-width: 768px) {
             body { padding: 0.8rem; }
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -341,7 +157,7 @@
         <div class="search-area">
             <div class="search-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="stockInput" placeholder="Search NIFTY 500 (e.g., 360ONE, RELIANCE, TCS)" autocomplete="off" list="niftySuggestions">
+                <input type="text" id="stockInput" placeholder="Search (e.g., 360ONE, RELIANCE, TCS)" autocomplete="off" list="niftySuggestions">
                 <datalist id="niftySuggestions"></datalist>
                 <button id="searchBtn" class="btn-primary"><i class="fas fa-arrow-right"></i> Analyze</button>
             </div>
@@ -360,32 +176,22 @@
         </div>
     </div>
 
-    <!-- Odometer Style Signal Display -->
     <div class="odometer-container">
         <div class="odometer-card">
             <div class="odometer-label">BUY SIGNAL STRENGTH</div>
-            <div class="odometer-wrapper">
-                <div class="odometer-digits" id="buyOdometer">0</div>
-                <div class="odometer-unit">%</div>
-            </div>
+            <div class="odometer-wrapper"><div class="odometer-digits" id="buyOdometer">0</div><div class="odometer-unit">%</div></div>
             <div class="odometer-progress"><div class="odometer-fill buy-fill" id="buyFill"></div></div>
             <div class="odometer-stats"><span><i class="fas fa-chart-line"></i> <span id="buyCountOdo">0</span> Indicators</span></div>
         </div>
         <div class="odometer-card">
             <div class="odometer-label">SELL SIGNAL STRENGTH</div>
-            <div class="odometer-wrapper">
-                <div class="odometer-digits" id="sellOdometer">0</div>
-                <div class="odometer-unit">%</div>
-            </div>
+            <div class="odometer-wrapper"><div class="odometer-digits" id="sellOdometer">0</div><div class="odometer-unit">%</div></div>
             <div class="odometer-progress"><div class="odometer-fill sell-fill" id="sellFill"></div></div>
             <div class="odometer-stats"><span><i class="fas fa-chart-line"></i> <span id="sellCountOdo">0</span> Indicators</span></div>
         </div>
         <div class="odometer-card">
             <div class="odometer-label">NET SCORE</div>
-            <div class="odometer-wrapper">
-                <div class="odometer-digits" id="netScoreOdometer">0</div>
-                <div class="odometer-unit">pts</div>
-            </div>
+            <div class="odometer-wrapper"><div class="odometer-digits" id="netScoreOdometer">0</div><div class="odometer-unit">pts</div></div>
             <div class="odometer-progress"><div class="odometer-fill net-fill" id="netFill"></div></div>
             <div class="odometer-stats"><span><i class="fas fa-balance-scale"></i> BUY - SELL</span></div>
         </div>
@@ -421,54 +227,55 @@
 </div>
 
 <script>
-    // ========================
-    // Frontend: Uses pre-calculated data from /data/processed/
-    // No external API calls - all indicators are already computed
-    // ========================
-    
     let chart = null;
     let resizeAttached = false;
     let searchTimeout = null;
     const isMobile = () => window.innerWidth < 768;
 
-    // Load symbols for autocomplete (from pre-defined list)
     async function loadSymbols() {
-        try {
-            // You can replace this with your nifty500.json file if it exists
-            const symbols = ['360ONE.NS', 'RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'WIPRO.NS', 
-                            'HDFCBANK.NS', 'ICICIBANK.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'ITC.NS'];
-            const datalist = document.getElementById('niftySuggestions');
-            datalist.innerHTML = '';
-            symbols.forEach(sym => {
-                const opt = document.createElement('option');
-                opt.value = sym;
-                datalist.appendChild(opt);
-            });
-        } catch(e) { console.log('Symbol loading skipped'); }
+        const symbols = ['360ONE.NS', 'RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'WIPRO.NS', 'HDFCBANK.NS', 'ICICIBANK.NS'];
+        const datalist = document.getElementById('niftySuggestions');
+        datalist.innerHTML = '';
+        symbols.forEach(sym => {
+            const opt = document.createElement('option');
+            opt.value = sym.replace('.NS', '');
+            datalist.appendChild(opt);
+        });
     }
 
-    // Fetch pre-calculated data from local JSON file
     async function fetchStockData(symbol) {
-        // Ensure .NS suffix
         let apiSymbol = symbol.toUpperCase();
         if (!apiSymbol.endsWith('.NS')) apiSymbol += '.NS';
-        
         const url = `/nifty-live-data-fetcher/data/processed/${apiSymbol}`;
         const res = await fetch(url);
-        if (!res.ok) {
-            throw new Error(`No data for ${symbol}. Available: 360ONE.NS, RELIANCE.NS, etc.`);
-        }
-        const data = await res.json();
-        if (!data || !data.candles) throw new Error('Invalid data format');
-        return data;
+        if (!res.ok) throw new Error(`No data for ${symbol}`);
+        return await res.json();
     }
 
-    // Draw candlestick chart with responsive settings
+    // Calculate SuperTrend value from price and ATR
+    function calculateSuperTrendValue(candles, period = 10, multiplier = 3) {
+        if (!candles || candles.length < period) return null;
+        const closes = candles.map(c => c.close);
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        // Calculate ATR
+        const tr = [];
+        for (let i = 1; i < highs.length; i++) {
+            tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1])));
+        }
+        const atr = tr.slice(-period).reduce((a,b) => a + b, 0) / period;
+        
+        // Calculate SuperTrend value (lower band for uptrend)
+        const hl2 = (highs[highs.length-1] + lows[lows.length-1]) / 2;
+        const superTrendValue = hl2 - multiplier * atr;
+        return superTrendValue.toFixed(2);
+    }
+
     function drawChart(candles) {
         if (chart) { chart.remove(); chart = null; }
         const container = document.getElementById('chartContainer');
         container.innerHTML = '';
-        
         const isMobileView = window.innerWidth < 768;
         const chartHeight = isMobileView ? 350 : 450;
         const sortedData = [...candles].sort((a, b) => new Date(a.time) - new Date(b.time));
@@ -489,17 +296,12 @@
         
         if (!resizeAttached) {
             window.addEventListener('resize', () => {
-                if (chart) {
-                    const newWidth = container.clientWidth;
-                    const newIsMobile = window.innerWidth < 768;
-                    chart.applyOptions({ width: newWidth, height: newIsMobile ? 350 : 450 });
-                }
+                if (chart) chart.applyOptions({ width: container.clientWidth, height: isMobile() ? 350 : 450 });
             });
             resizeAttached = true;
         }
     }
 
-    // Helper to get CSS class for signal display
     function getSignalClass(signal) {
         const s = (signal || 'NEUTRAL').toUpperCase();
         if (s === 'BUY' || s === 'STRONG BUY') return 'buy';
@@ -507,15 +309,12 @@
         return 'neutral';
     }
 
-    // Update odometer style displays
     function updateOdometer(buyCount, sellCount, total) {
         const buyPercent = total > 0 ? (buyCount / total) * 100 : 0;
         const sellPercent = total > 0 ? (sellCount / total) * 100 : 0;
         const netScore = buyCount - sellCount;
-        const maxScore = total;
-        const netPercent = maxScore > 0 ? ((netScore + maxScore) / (maxScore * 2)) * 100 : 50;
+        const netPercent = total > 0 ? ((netScore + total) / (total * 2)) * 100 : 50;
         
-        // Animate digits
         const buyOdo = document.getElementById('buyOdometer');
         const sellOdo = document.getElementById('sellOdometer');
         const netOdo = document.getElementById('netScoreOdometer');
@@ -533,9 +332,7 @@
             if (currentSell < targetSell) { currentSell++; sellOdo.innerText = currentSell; }
             if (currentNet < targetNet && targetNet > 0) { currentNet++; netOdo.innerText = currentNet; }
             else if (currentNet > targetNet && targetNet < 0) { currentNet--; netOdo.innerText = currentNet; }
-            else if (currentNet === targetNet && currentBuy === targetBuy && currentSell === targetSell) {
-                clearInterval(interval);
-            }
+            else if (currentNet === targetNet && currentBuy === targetBuy && currentSell === targetSell) clearInterval(interval);
         }, 10);
         
         buyFill.style.width = buyPercent + '%';
@@ -545,7 +342,6 @@
         document.getElementById('sellCountOdo').innerText = sellCount;
     }
 
-    // Main analysis function
     async function analyzeStock(inputSymbol) {
         const loading = document.getElementById('loadingOverlay');
         const btn = document.getElementById('searchBtn');
@@ -560,13 +356,16 @@
             
             const ind = data.indicators;
             
-            // Helper to render indicator values
-            const renderRow = (name, value, signal) => {
+            // Calculate SuperTrend value from candles
+            const superTrendValue = calculateSuperTrendValue(data.candles);
+            
+            const renderRow = (name, value, signal, extra = '') => {
                 const sigClass = getSignalClass(signal);
-                return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${sigClass}">${signal} ${value ? `(${value})` : ''}</span></div>`;
+                const valueText = value !== undefined && value !== null ? `(${value})` : '';
+                return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${sigClass}">${signal} ${valueText} ${extra}</span></div>`;
             };
             
-            // Trend Indicators
+            // Trend Indicators - NOW WITH SUPERTREND VALUE
             document.getElementById('trendIndicators').innerHTML = [
                 renderRow('EMA 20', ind.EMA20?.value, ind.EMA20?.signal),
                 renderRow('EMA 50', ind.EMA50?.value, ind.EMA50?.signal),
@@ -574,13 +373,12 @@
                 renderRow('SMA 20', ind.SMA20?.value, ind.SMA20?.signal),
                 renderRow('SMA 50', ind.SMA50?.value, ind.SMA50?.signal),
                 renderRow('SMA 200', ind.SMA200?.value, ind.SMA200?.signal),
-                renderRow('SuperTrend', null, ind.SuperTrend?.signal),
+                renderRow('SuperTrend', superTrendValue, ind.SuperTrend?.signal),
                 renderRow('Ichimoku', null, ind.Ichimoku?.signal),
                 renderRow('Parabolic SAR', null, ind.Parabolic_SAR?.signal),
                 renderRow('ADX', ind.ADX?.value, ind.ADX?.signal)
             ].join('');
             
-            // Momentum Indicators
             document.getElementById('momentumIndicators').innerHTML = [
                 renderRow('RSI (14)', ind.RSI?.value, ind.RSI?.signal),
                 renderRow('Stochastic RSI', ind.StochasticRSI?.value, ind.StochasticRSI?.signal),
@@ -590,25 +388,21 @@
                 renderRow('ROC', ind.ROC?.value, ind.ROC?.signal),
                 renderRow('Momentum', ind.Momentum?.value, ind.Momentum?.signal),
                 renderRow('MFI', ind.MFI?.value, ind.MFI?.signal),
-                renderRow('Ultimate Oscillator', ind.Ultimate_Oscillator?.value, ind.Ultimate_Oscillator?.signal)
+                renderRow('Ultimate Osc', ind.Ultimate_Oscillator?.value, ind.Ultimate_Oscillator?.signal)
             ].join('');
             
-            // Volume Indicators
             document.getElementById('volumeIndicators').innerHTML = [
                 renderRow('OBV', ind.OBV?.value, ind.OBV?.signal),
                 renderRow('CMF', ind.CMF?.value, ind.CMF?.signal),
                 renderRow('VWAP', ind.VWAP?.value, ind.VWAP?.signal)
             ].join('');
             
-            // Volatility Indicators
             document.getElementById('volatilityIndicators').innerHTML = [
                 renderRow('Bollinger Bands', null, ind.BollingerBands?.signal),
                 renderRow('ATR', ind.ATR?.value, null),
-                renderRow('Standard Deviation', ind.StandardDeviation?.value, null),
-                renderRow('Keltner Channel', null, null)
+                renderRow('Std Deviation', ind.StandardDeviation?.value, null)
             ].join('');
             
-            // Count signals
             const allSignals = [
                 ind.EMA20?.signal, ind.EMA50?.signal, ind.EMA200?.signal, ind.SMA20?.signal, ind.SMA50?.signal, ind.SMA200?.signal,
                 ind.SuperTrend?.signal, ind.Ichimoku?.signal, ind.Parabolic_SAR?.signal,
@@ -634,9 +428,10 @@
             document.getElementById('bullishMeterFill').style.width = bullishPercent + '%';
             
             let summary = `Based on ${total} indicators, the verdict is ${finalRec}. `;
-            if (buy > sell) summary += `${buy} BUY vs ${sell} SELL signals indicate bullish momentum. `;
-            else if (sell > buy) summary += `${sell} SELL vs ${buy} BUY signals indicate bearish pressure. `;
+            if (buy > sell) summary += `${buy} BUY vs ${sell} SELL indicates bullish momentum. `;
+            else if (sell > buy) summary += `${sell} SELL vs ${buy} BUY indicates bearish pressure. `;
             else summary += `Mixed signals suggest consolidation. `;
+            if (ind.SuperTrend?.signal === 'BUY') summary += `SuperTrend bullish at ${superTrendValue}. `;
             document.getElementById('aiSummaryText').innerText = summary;
             
         } catch (err) {
@@ -656,13 +451,11 @@
         }, 300);
     }
     
-    // Event listeners
     document.getElementById('searchBtn').addEventListener('click', handleSearch);
     document.getElementById('stockInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); handleSearch(); }
     });
     
-    // Initialize
     loadSymbols();
     const placeholder = document.getElementById('chartContainer');
     if (placeholder) {
