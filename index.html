@@ -40,7 +40,6 @@
         .accent { color: #3b82f6; }
         .badge { background: #1e2a4a; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.7rem; }
         
-        /* Search wrapper with custom dropdown */
         .search-wrapper {
             position: relative;
             display: flex;
@@ -58,7 +57,6 @@
             width: 220px;
             outline: none;
         }
-        /* Custom dropdown for suggestions */
         .suggestions-dropdown {
             position: absolute;
             top: 100%;
@@ -74,9 +72,7 @@
             border: 1px solid #3b82f6;
             display: none;
         }
-        .suggestions-dropdown.show {
-            display: block;
-        }
+        .suggestions-dropdown.show { display: block; }
         .suggestion-item {
             padding: 10px 15px;
             cursor: pointer;
@@ -84,16 +80,9 @@
             border-bottom: 1px solid #334155;
             font-size: 0.85rem;
         }
-        .suggestion-item:hover {
-            background: #3b82f6;
-        }
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-        .suggestion-highlight {
-            font-weight: bold;
-            color: #3b82f6;
-        }
+        .suggestion-item:hover { background: #3b82f6; }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-highlight { font-weight: bold; color: #3b82f6; background: rgba(59,130,246,0.2); }
         
         .btn-primary {
             background: linear-gradient(135deg, #2563eb, #1e40af);
@@ -270,19 +259,22 @@
     let chart = null;
     let resizeAttached = false;
     let searchTimeout = null;
-    let allSymbols = []; // Store all symbols from nifty500.json
+    let allSymbols = [];
     const isMobile = () => window.innerWidth < 768;
 
-    // Load all symbols from nifty500.json
+    // Load symbols from nifty500.csv
     async function loadAllSymbols() {
         try {
-            const response = await fetch('/nifty-live-data-fetcher/nifty500.json');
+            const response = await fetch('/nifty-live-data-fetcher/nifty500.csv');
             if (response.ok) {
-                const symbols = await response.json();
-                allSymbols = symbols.map(s => s.replace(/\.NS$/i, '').toUpperCase());
-                console.log(`Loaded ${allSymbols.length} symbols`);
+                const csvText = await response.text();
+                // Parse CSV - each line is a symbol
+                allSymbols = csvText.split('\n')
+                    .map(line => line.trim().toUpperCase())
+                    .filter(line => line.length > 0 && !line.startsWith('#'));
+                console.log(`Loaded ${allSymbols.length} symbols from CSV`);
             } else {
-                throw new Error('Failed to load');
+                throw new Error('CSV not found');
             }
         } catch (error) {
             console.warn('Using fallback symbols');
@@ -290,7 +282,6 @@
         }
     }
 
-    // Filter and show suggestions based on input
     function showSuggestions(inputValue) {
         const dropdown = document.getElementById('suggestionsDropdown');
         if (!inputValue || inputValue.length < 1) {
@@ -298,7 +289,9 @@
             return;
         }
         
-        const filtered = allSymbols.filter(s => s.startsWith(inputValue.toUpperCase())).slice(0, 15);
+        const filtered = allSymbols
+            .filter(s => s.startsWith(inputValue.toUpperCase()))
+            .slice(0, 15);
         
         if (filtered.length === 0) {
             dropdown.classList.remove('show');
@@ -330,15 +323,15 @@
         analyzeStock(symbol);
     }
     
-    // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
         const wrapper = document.querySelector('.search-wrapper');
-        if (!wrapper.contains(e.target)) {
+        if (wrapper && !wrapper.contains(e.target)) {
             document.getElementById('suggestionsDropdown').classList.remove('show');
         }
     });
 
     async function fetchStockData(symbol) {
+        // Add .NS for API call
         let apiSymbol = symbol.toUpperCase();
         if (!apiSymbol.endsWith('.NS')) apiSymbol += '.NS';
         const url = `/nifty-live-data-fetcher/data/processed/${apiSymbol}`;
@@ -447,7 +440,7 @@
             const ind = data.indicators;
             const superTrendValue = calculateSuperTrendValue(data.candles);
             
-            const renderRow = (name, value, signal, extra = '') => {
+            const renderRow = (name, value, signal) => {
                 const sigClass = getSignalClass(signal);
                 const valueText = value !== undefined && value !== null ? `(${value})` : '';
                 return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${sigClass}">${signal} ${valueText}</span></div>`;
@@ -538,7 +531,6 @@
         }, 300);
     }
     
-    // Input event for live suggestions
     const stockInput = document.getElementById('stockInput');
     stockInput.addEventListener('input', (e) => {
         showSuggestions(e.target.value);
