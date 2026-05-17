@@ -1,0 +1,126 @@
+name: Fetch & Calculate Indicators
+
+on:
+  schedule:
+    - cron: '30 11 * * *'  # 5 PM IST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: pip install pandas numpy yfinance ta
+      
+      - name: Fetch and calculate indicators
+        run: |
+          import json
+          import yfinance as yf
+          import pandas as pd
+          from ta.momentum import RSIIndicator, MACD
+          from ta.trend import EMAIndicator, SMAIndicator, ADXIndicator
+          from ta.volatility import BollingerBands, AverageTrueRange
+          from ta.volume import OnBalanceVolumeIndicator
+          
+          # Read symbols from CSV
+          with open('nifty500.csv', 'r') as f:
+              symbols = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+          
+          for symbol in symbols:
+              # Add .NS if missing
+              if not symbol.endswith('.NS'):
+                  ticker = f"{symbol}.NS"
+              else:
+                  ticker = symbol
+              
+              # Fetch 1 year of data
+              stock = yf.Ticker(ticker)
+              df = stock.history(period='1y')
+              
+              if df.empty:
+                  print(f"No data for {ticker}")
+                  continue
+              
+              # Calculate ALL indicators
+              df['RSI'] = RSIIndicator(close=df['Close'], window=14).rsi()
+              df['MACD'] = MACD(close=df['Close']).macd()
+              df['MACD_signal'] = MACD(close=df['Close']).macd_signal()
+              df['EMA20'] = EMAIndicator(close=df['Close'], window=20).ema_indicator()
+              df['EMA50'] = EMAIndicator(close=df['Close'], window=50).ema_indicator()
+              df['EMA100'] = EMAIndicator(close=df['Close'], window=100).ema_indicator()
+              df['EMA200'] = EMAIndicator(close=df['Close'], window=200).ema_indicator()
+              df['SMA20'] = SMAIndicator(close=df['Close'], window=20).sma_indicator()
+              df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
+              df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
+              df['BB_upper'] = BollingerBands(close=df['Close'], window=20, window_dev=2).bollinger_hband()
+              df['BB_lower'] = BollingerBands(close=df['Close'], window=20, window_dev=2).bollinger_lband()
+              df['ATR'] = AverageTrueRange(high=df['High'], low=df['Low'], close=df['Close'], window=14).average_true_range()
+              df['ADX'] = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], window=14).adx()
+              df['OBV'] = OnBalanceVolumeIndicator(close=df['Close'], volume=df['Volume']).on_balance_volume()
+              
+              # Get latest values (for signals)
+              latest = df.iloc[-1]
+              prev = df.iloc[-2] if len(df) > 1 else latest
+              
+              # Generate signals
+              signals = {
+                  'symbol': ticker,
+                  'latest_price': float(latest['Close']),
+                  'timestamp': str(latest.name),
+                  'indicators': {
+                      'RSI': float(latest['RSI']) if pd.notna(latest['RSI']) else None,
+                      'RSI_signal': 'BUY' if latest['RSI'] < 30 else 'SELL' if latest['RSI'] > 70 else 'NEUTRAL',
+                      'MACD': float(latest['MACD']) if pd.notna(latest['MACD']) else None,
+                      'MACD_signal': 'BUY' if latest['MACD'] > latest['MACD_signal'] else 'SELL',
+                      'EMA20': float(latest['EMA20']) if pd.notna(latest['EMA20']) else latest['Close'],
+                      'EMA20_signal': 'BUY' if latest['Close'] > latest['EMA20'] else 'SELL',
+                      'EMA50': float(latest['EMA50']) if pd.notna(latest['EMA50']) else latest['Close'],
+                      'EMA50_signal': 'BUY' if latest['Close'] > latest['EMA50'] else 'SELL',
+                      'EMA100': float(latest['EMA100']) if pd.notna(latest['EMA100']) else latest['Close'],
+                      'EMA100_signal': 'BUY' if latest['Close'] > latest['EMA100'] else 'SELL',
+                      'EMA200': float(latest['EMA200']) if pd.notna(latest['EMA200']) else latest['Close'],
+                      'EMA200_signal': 'BUY' if latest['Close'] > latest['EMA200'] else 'SELL',
+                      'SMA20': float(latest['SMA20']) if pd.notna(latest['SMA20']) else latest['Close'],
+                      'SMA20_signal': 'BUY' if latest['Close'] > latest['SMA20'] else 'SELL',
+                      'SMA50': float(latest['SMA50']) if pd.notna(latest['SMA50']) else latest['Close'],
+                      'SMA50_signal': 'BUY' if latest['Close'] > latest['SMA50'] else 'SELL',
+                      'SMA200': float(latest['SMA200']) if pd.notna(latest['SMA200']) else latest['Close'],
+                      'SMA200_signal': 'BUY' if latest['Close'] > latest['SMA200'] else 'SELL',
+                      'BB_upper': float(latest['BB_upper']) if pd.notna(latest['BB_upper']) else None,
+                      'BB_lower': float(latest['BB_lower']) if pd.notna(latest['BB_lower']) else None,
+                      'BB_signal': 'SELL' if latest['Close'] > latest['BB_upper'] else 'BUY' if latest['Close'] < latest['BB_lower'] else 'NEUTRAL',
+                      'ATR': float(latest['ATR']) if pd.notna(latest['ATR']) else None,
+                      'ADX': float(latest['ADX']) if pd.notna(latest['ADX']) else None,
+                      'ADX_signal': 'TRENDING' if latest['ADX'] > 25 else 'NEUTRAL',
+                      'OBV': float(latest['OBV']) if pd.notna(latest['OBV']) else None,
+                      'OBV_signal': 'BUY' if latest['OBV'] > prev['OBV'] else 'SELL'
+                  },
+                  'candles': [
+                      {'time': str(idx.date()), 'open': float(row['Open']), 'high': float(row['High']), 
+                       'low': float(row['Low']), 'close': float(row['Close']), 'volume': int(row['Volume'])}
+                      for idx, row in df.iterrows()
+                  ]
+              }
+              
+              # Save to file
+              with open(f'data/{ticker}.json', 'w') as f:
+                  json.dump(signals, f, indent=2)
+              
+              print(f"✅ Calculated {ticker}")
+      
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Update stock data & indicators [skip ci]" || echo "No changes"
+          git push
