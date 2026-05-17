@@ -265,7 +265,7 @@
     // Load symbols from nifty500.csv
     async function loadAllSymbols() {
         try {
-            const response = await fetch('/nifty-live-data-fetcher/nifty500.csv');
+            const response = await fetch('/stock.dna/nifty500.csv');
             if (response.ok) {
                 const csvText = await response.text();
                 // Parse CSV - each line is a symbol
@@ -334,7 +334,7 @@
         // Add .NS for API call
         let apiSymbol = symbol.toUpperCase();
         if (!apiSymbol.endsWith('.NS')) apiSymbol += '.NS';
-        const url = `/nifty-live-data-fetcher/data/processed/${apiSymbol}`;
+        const url = `/stock.dna/data/processed/${apiSymbol}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`No data for ${symbol}`);
         return await res.json();
