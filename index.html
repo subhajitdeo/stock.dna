@@ -3,28 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- Theme color for mobile Chrome (premium dark) -->
     <meta name="theme-color" content="#0a0f1e">
-    <!-- SEO + Social Preview -->
     <meta name="description" content="Advanced NIFTY 500 Technical Analysis Dashboard with 20+ indicators, TradingView charts, AI synopsis, and live Yahoo Finance data.">
     <meta property="og:title" content="Nexus Charts | NIFTY 500 Technical Analysis">
     <meta property="og:description" content="Advanced NIFTY 500 Technical Analysis Dashboard with real-time indicators and AI insights.">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://via.placeholder.com/1200x630?text=Nexus+Charts"> <!-- optional, replace if you have a preview image -->
     <title>Nexus Charts | NIFTY 500 Technical Analysis</title>
-    <!-- Google Fonts + Font Awesome -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Lightweight Charts (jsDelivr - more stable) -->
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
-    <!-- Technical Indicators Library -->
     <script src="https://cdn.jsdelivr.net/npm/technicalindicators@3.1.0/dist/technicalindicators.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="app-container">
-    <!-- Glassmorphic Header -->
     <header class="glass-header">
         <div class="logo-area">
             <i class="fas fa-chart-line"></i>
@@ -41,54 +32,34 @@
         </div>
     </header>
 
-    <!-- Chart Card -->
     <div class="chart-glass-card">
         <div class="chart-header">
-            <div id="symbolTitle" class="symbol-title">RELIANCE.NS</div>
+            <div id="symbolTitle" class="symbol-title">—</div>
             <div class="chart-badge"><i class="fas fa-calendar-alt"></i> Daily • 1 Year</div>
         </div>
-        <div id="chartContainer" style="width: 100%; height: 460px;"></div>
+        <div id="chartContainer" style="width: 100%; height: 430px;"></div>
         <div id="loadingOverlay" class="loading-overlay hidden">
             <div class="spinner"></div>
             <p>Fetching market data & computing intelligence...</p>
         </div>
     </div>
 
-    <!-- Dashboard Grid -->
     <div class="dashboard-grid">
-        <!-- Left Panel: Indicator Categories -->
         <div class="indicators-panel">
-            <div class="category-card">
-                <div class="cat-header"><i class="fas fa-chart-line"></i> Trend Indicators</div>
-                <div class="indicators-list" id="trendIndicators"></div>
-            </div>
-            <div class="category-card">
-                <div class="cat-header"><i class="fas fa-bolt"></i> Momentum Indicators</div>
-                <div class="indicators-list" id="momentumIndicators"></div>
-            </div>
-            <div class="category-card">
-                <div class="cat-header"><i class="fas fa-chart-column"></i> Volume Indicators</div>
-                <div class="indicators-list" id="volumeIndicators"></div>
-            </div>
-            <div class="category-card">
-                <!-- FIX: replaced fa-waveform with fa-wave-square -->
-                <div class="cat-header"><i class="fas fa-wave-square"></i> Volatility Indicators</div>
-                <div class="indicators-list" id="volatilityIndicators"></div>
-            </div>
+            <div class="category-card"><div class="cat-header"><i class="fas fa-chart-line"></i> Trend Indicators</div><div class="indicators-list" id="trendIndicators"></div></div>
+            <div class="category-card"><div class="cat-header"><i class="fas fa-bolt"></i> Momentum Indicators</div><div class="indicators-list" id="momentumIndicators"></div></div>
+            <div class="category-card"><div class="cat-header"><i class="fas fa-chart-column"></i> Volume Indicators</div><div class="indicators-list" id="volumeIndicators"></div></div>
+            <div class="category-card"><div class="cat-header"><i class="fas fa-wave-square"></i> Volatility Indicators</div><div class="indicators-list" id="volatilityIndicators"></div></div>
         </div>
-
-        <!-- Right Panel: Verdict + Strength + AI Summary -->
         <div class="insights-panel">
-            <div class="recommendation-card glass-card-hover">
+            <div class="recommendation-card">
                 <h3><i class="fas fa-robot"></i> Overall Verdict</h3>
                 <div id="finalRec" class="final-recommendation">NEUTRAL</div>
                 <div class="strength-meter-wrapper">
                     <div class="meter-label">Bullish Strength <span id="bullishPercent">0</span>%</div>
-                    <div class="meter-bar-bg">
-                        <div id="bullishMeterFill" class="meter-fill" style="width: 0%;"></div>
-                    </div>
+                    <div class="meter-bar-bg"><div id="bullishMeterFill" class="meter-fill" style="width:0%"></div></div>
                 </div>
-                <div class="signal-stats" id="signalStats">
+                <div class="signal-stats">
                     <span><i class="fas fa-arrow-up"></i> BUY: <span id="buyCount">0</span></span>
                     <span><i class="fas fa-arrow-down"></i> SELL: <span id="sellCount">0</span></span>
                     <span><i class="fas fa-minus-circle"></i> NEUTRAL: <span id="neutralCount">0</span></span>
@@ -96,14 +67,11 @@
             </div>
             <div class="ai-summary-card">
                 <div class="cat-header"><i class="fas fa-microchip"></i> AI Market Synopsis</div>
-                <div id="aiSummaryText" class="summary-text">
-                    Loading indicators to generate intelligent overview...
-                </div>
+                <div id="aiSummaryText" class="summary-text">Enter a symbol and click Analyze.</div>
             </div>
         </div>
     </div>
 </div>
-
 <script src="script.js"></script>
 </body>
 </html>
