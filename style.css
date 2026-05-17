@@ -1,8 +1,4 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
     font-family: 'Inter', sans-serif;
@@ -10,10 +6,7 @@ body {
     padding: 1rem;
     min-height: 100vh;
 }
-.app-container {
-    max-width: 1600px;
-    margin: 0 auto;
-}
+.app-container { max-width: 1600px; margin: 0 auto; }
 .glass-header, .chart-glass-card, .category-card, .recommendation-card, .ai-summary-card {
     background: rgba(12, 20, 30, 0.55);
     backdrop-filter: blur(12px);
@@ -30,21 +23,10 @@ body {
     gap: 1rem;
     margin-bottom: 1.5rem;
 }
-.logo-area {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.3rem;
-    font-weight: 700;
-}
+.logo-area { display: flex; align-items: center; gap: 0.5rem; font-size: 1.3rem; font-weight: 700; }
 .logo-area i { color: #3b82f6; font-size: 1.5rem; }
 .accent { color: #3b82f6; }
-.badge {
-    font-size: 0.7rem;
-    background: #1e2a4a;
-    padding: 0.2rem 0.7rem;
-    border-radius: 30px;
-}
+.badge { font-size: 0.7rem; background: #1e2a4a; padding: 0.2rem 0.7rem; border-radius: 30px; }
 .search-wrapper {
     display: flex;
     gap: 0.5rem;
@@ -58,7 +40,7 @@ body {
     border: none;
     color: white;
     font-size: 0.9rem;
-    width: 200px;
+    width: 220px;
     outline: none;
 }
 .btn-primary {
@@ -76,7 +58,7 @@ body {
 }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 .chart-glass-card { padding: 1rem; margin-bottom: 1.5rem; position: relative; }
-.chart-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+.chart-header { display: flex; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; }
 .symbol-title { font-weight: 700; font-size: 1.3rem; background: linear-gradient(135deg,#fff,#93c5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .chart-badge { background: #1e293b; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.7rem; }
 #chartContainer { border-radius: 1rem; overflow: hidden; }
@@ -154,6 +136,8 @@ body {
 .meter-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #a855f7); border-radius: 30px; transition: width 0.5s ease; }
 .signal-stats { display: flex; justify-content: space-around; margin-top: 0.8rem; font-size: 0.8rem; }
 .ai-summary-card .summary-text { line-height: 1.4; font-size: 0.85rem; color: #ccdeff; margin-top: 0.5rem; }
+
+/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
     body { padding: 0.8rem; }
     .dashboard-grid { grid-template-columns: 1fr; }
@@ -164,4 +148,10 @@ body {
     .chart-glass-card { padding: 0.8rem; }
     .symbol-title { font-size: 1.1rem; }
     .final-recommendation { font-size: 1.4rem; }
+    .category-card, .recommendation-card, .ai-summary-card { padding: 0.8rem; }
+    .indicator-row { font-size: 0.75rem; }
+}
+@media (max-width: 480px) {
+    .search-wrapper input { width: 120px; }
+    .btn-primary { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
 }
