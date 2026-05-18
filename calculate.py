@@ -4,8 +4,7 @@ import pandas as pd
 import numpy as np
 import math
 import requests
-from io import BytesIO
-import zipfile
+from datetime import datetime
 
 # ========== CONFIGURATION ==========
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/subhajitdeo/shape.dna/main/data"
@@ -17,7 +16,6 @@ os.makedirs(PROCESSED_DIR, exist_ok=True)
 # ========== FETCH FUNCTIONS ==========
 def get_available_tickers():
     """Get list of available .NS.json files from GitHub"""
-    # GitHub API to list contents
     api_url = "https://api.github.com/repos/subhajitdeo/shape.dna/contents/data"
     try:
         response = requests.get(api_url)
@@ -31,7 +29,6 @@ def get_available_tickers():
             return tickers
         else:
             print(f"GitHub API error: {response.status_code}")
-            # Fallback to a predefined list or return empty
             return []
     except Exception as e:
         print(f"Error fetching ticker list: {e}")
@@ -41,7 +38,7 @@ def fetch_ticker_data(ticker):
     """Fetch ticker JSON from GitHub"""
     url = f"{GITHUB_RAW_BASE}/{ticker}.NS.json"
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=30)
         if response.status_code == 200:
             return response.json()
         else:
@@ -52,11 +49,6 @@ def fetch_ticker_data(ticker):
         return None
 
 # ========== INDICATOR CALCULATION FUNCTIONS ==========
-# [All your existing indicator functions remain exactly the same]
-# (ema, sma, rsi, macd, bollinger_bands, atr, obv, stochastic_rsi, cci, 
-#  williams_r, roc, momentum, mfi, adx, supertrend, ichimoku, parabolic_sar,
-#  keltner_channel, donchian_channel, aroon, ultimate_oscillator, cmf,
-#  ease_of_movement, std_deviation, vwap, get_signal)
 
 def ema(values, period):
     if len(values) < period:
@@ -371,8 +363,6 @@ def get_signal(buy_cond, sell_cond):
         return 'SELL'
     return 'NEUTRAL'
 
-# ========== MAIN PROCESSING ==========
-
 def parse_candles(data):
     """Parse Yahoo Finance JSON format into rows"""
     rows = []
@@ -424,7 +414,7 @@ def process_ticker(ticker):
     volumes = [r['volume'] for r in rows]
     latest_close = closes[-1]
     
-    # Calculate indicators (with error handling as in your original code)
+    # Calculate indicators (with error handling)
     try:
         rsi_val = rsi(closes)
     except:
@@ -576,10 +566,72 @@ def process_ticker(ticker):
     except:
         sma200 = latest_close
     
+    # Calculate summary signals
+    buy_signals = 0
+    sell_signals = 0
+    total_indicators = 0
+    
+    # Count signals from various indicators
+    if rsi_val < 30: buy_signals += 1
+    elif rsi_val > 70: sell_signals += 1
+    total_indicators += 1
+    
+    if stoch_rsi_val < 20: buy_signals += 1
+    elif stoch_rsi_val > 80: sell_signals += 1
+    total_indicators += 1
+    
+    if macd_line > macd_sig: buy_signals += 1
+    elif macd_line < macd_sig: sell_signals += 1
+    total_indicators += 1
+    
+    if cci_val < -100: buy_signals += 1
+    elif cci_val > 100: sell_signals += 1
+    total_indicators += 1
+    
+    if williams_val < -80: buy_signals += 1
+    elif williams_val > -20: sell_signals += 1
+    total_indicators += 1
+    
+    if mfi_val < 20: buy_signals += 1
+    elif mfi_val > 80: sell_signals += 1
+    total_indicators += 1
+    
+    if supertrend_signal == "BUY": buy_signals += 1
+    elif supertrend_signal == "SELL": sell_signals += 1
+    total_indicators += 1
+    
+    if latest_close > ema20: buy_signals += 1
+    else: sell_signals += 1
+    total_indicators += 1
+    
+    if latest_close > ema50: buy_signals += 1
+    else: sell_signals += 1
+    total_indicators += 1
+    
+    if bb_lower and latest_close < bb_lower: buy_signals += 1
+    elif bb_upper and latest_close > bb_upper: sell_signals += 1
+    total_indicators += 1
+    
+    final_signal = "NEUTRAL"
+    if buy_signals > sell_signals + 2:
+        final_signal = "STRONG_BUY"
+    elif buy_signals > sell_signals:
+        final_signal = "BUY"
+    elif sell_signals > buy_signals + 2:
+        final_signal = "STRONG_SELL"
+    elif sell_signals > buy_signals:
+        final_signal = "SELL"
+    
     output = {
         'symbol': ticker,
-        'updated_at': pd.Timestamp.now().isoformat(),
+        'updated_at': datetime.now().isoformat(),
         'latest_price': round(latest_close, 2),
+        'final_signal': final_signal,
+        'signal_summary': {
+            'buy_signals': buy_signals,
+            'sell_signals': sell_signals,
+            'total_indicators': total_indicators
+        },
         'candles': rows[-252:],
         'indicators': {
             'RSI': {'value': round(rsi_val, 2), 'signal': get_signal(rsi_val < 30, rsi_val > 70)},
@@ -620,33 +672,46 @@ def process_ticker(ticker):
     with open(out_path, 'w') as f:
         json.dump(output, f, indent=2)
     
-    print(f"  ✅ Saved {ticker} - Close: ₹{round(latest_close, 2)}, RSI: {round(rsi_val, 2)}")
+    print(f"  ✅ {ticker} - ₹{round(latest_close, 2)} | RSI: {round(rsi_val, 2)} | Signal: {final_signal}")
     return True
 
 # ========== MAIN EXECUTION ==========
 
 def main():
-    print("📈 Fetching ticker list from GitHub...")
+    print("=" * 60)
+    print("📈 STOCK MARKET INDICATOR ANALYZER")
+    print("=" * 60)
+    print("\nFetching ticker list from GitHub...")
+    
     tickers = get_available_tickers()
     
     if not tickers:
-        print("❌ Could not fetch ticker list. Trying fallback mode...")
-        # Fallback: try common Nifty 50 stocks
+        print("❌ Could not fetch ticker list. Using fallback Nifty 50 stocks...")
+        # Fallback: common Nifty 50 stocks
         fallback_tickers = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 
-                           'HINDUNILVR', 'SBIN', 'BHARTIARTL', 'KOTAKBANK', 'ITC']
+                           'HINDUNILVR', 'SBIN', 'BHARTIARTL', 'KOTAKBANK', 'ITC',
+                           'AXISBANK', 'LT', 'WIPRO', 'HCLTECH', 'SUNPHARMA']
         tickers = fallback_tickers
-        print(f"Using fallback ticker list: {', '.join(tickers)}")
     
-    print(f"Found {len(tickers)} tickers to process")
+    print(f"📊 Found {len(tickers)} tickers to process\n")
     
     successful = 0
+    failed = 0
+    
     for i, ticker in enumerate(tickers, 1):
-        print(f"\n[{i}/{len(tickers)}]", end=" ")
+        print(f"[{i}/{len(tickers)}]", end=" ")
         if process_ticker(ticker):
             successful += 1
+        else:
+            failed += 1
     
-    print(f"\n✅ Done! Processed {successful}/{len(tickers)} tickers successfully")
-    print(f"📁 Results saved to {PROCESSED_DIR}/")
+    print("\n" + "=" * 60)
+    print(f"✅ COMPLETED!")
+    print(f"   Successfully processed: {successful}")
+    print(f"   Failed: {failed}")
+    print(f"   Total: {len(tickers)}")
+    print(f"📁 Results saved to: {PROCESSED_DIR}/")
+    print("=" * 60)
 
 if __name__ == "__main__":
     main()
