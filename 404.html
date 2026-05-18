@@ -278,7 +278,7 @@
             }
         } catch (error) {
             console.warn('Using fallback symbols');
-            allSymbols = ['360ONE', 'RELIANCE', 'TCS', 'INFY', 'WIPRO', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'LT', 'HINDUNILVR', 'AXISBANK', 'KOTAKBANK'];
+            allSymbols = ['RELIANCE', 'TCS', 'INFY', 'WIPRO', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'LT', 'HINDUNILVR', 'AXISBANK', 'KOTAKBANK'];
         }
     }
 
@@ -331,12 +331,15 @@
     });
 
     async function fetchStockData(symbol) {
-        // Add .NS for API call
-        let apiSymbol = symbol.toUpperCase();
-        if (!apiSymbol.endsWith('.NS')) apiSymbol += '.NS';
-        const url = `/stock.dna/data/processed/${apiSymbol}`;
+        // Remove any .NS suffix if present and fetch from processed folder
+        const cleanSymbol = symbol.toUpperCase().replace(/\.NS$/i, '');
+        const url = `/stock.dna/data/processed/${cleanSymbol}.json`;
+        console.log('Fetching:', url);
+        
         const res = await fetch(url);
-        if (!res.ok) throw new Error(`No data for ${symbol}`);
+        if (!res.ok) {
+            throw new Error(`No data found for ${cleanSymbol}. Make sure the stock is in NIFTY 500.`);
+        }
         return await res.json();
     }
 
@@ -387,8 +390,10 @@
 
     function getSignalClass(signal) {
         const s = (signal || 'NEUTRAL').toUpperCase();
-        if (s === 'BUY' || s === 'STRONG BUY') return 'buy';
-        if (s === 'SELL' || s === 'STRONG SELL') return 'sell';
+        if (s === 'BUY') return 'buy';
+        if (s === 'SELL') return 'sell';
+        if (s === 'STRONG_BUY') return 'strong-buy';
+        if (s === 'STRONG_SELL') return 'strong-sell';
         return 'neutral';
     }
 
@@ -405,18 +410,9 @@
         const sellFill = document.getElementById('sellFill');
         const netFill = document.getElementById('netFill');
         
-        let currentBuy = 0, currentSell = 0, currentNet = 0;
-        const targetBuy = Math.round(buyPercent);
-        const targetSell = Math.round(sellPercent);
-        const targetNet = netScore;
-        
-        const interval = setInterval(() => {
-            if (currentBuy < targetBuy) { currentBuy++; buyOdo.innerText = currentBuy; }
-            if (currentSell < targetSell) { currentSell++; sellOdo.innerText = currentSell; }
-            if (currentNet < targetNet && targetNet > 0) { currentNet++; netOdo.innerText = currentNet; }
-            else if (currentNet > targetNet && targetNet < 0) { currentNet--; netOdo.innerText = currentNet; }
-            else if (currentNet === targetNet && currentBuy === targetBuy && currentSell === targetSell) clearInterval(interval);
-        }, 10);
+        buyOdo.innerText = Math.round(buyPercent);
+        sellOdo.innerText = Math.round(sellPercent);
+        netOdo.innerText = netScore;
         
         buyFill.style.width = buyPercent + '%';
         sellFill.style.width = sellPercent + '%';
@@ -433,8 +429,8 @@
         
         try {
             const data = await fetchStockData(inputSymbol);
-            const cleanName = inputSymbol.replace(/\.NS$/i, '');
-            document.getElementById('symbolTitle').innerText = cleanName;
+            const cleanName = inputSymbol.toUpperCase().replace(/\.NS$/i, '');
+            document.getElementById('symbolTitle').innerHTML = `${cleanName} <span style="font-size:0.8rem; color:#94a3b8;">₹${data.latest_price.toFixed(2)}</span>`;
             drawChart(data.candles);
             
             const ind = data.indicators;
@@ -442,13 +438,15 @@
             
             const renderRow = (name, value, signal) => {
                 const sigClass = getSignalClass(signal);
-                const valueText = value !== undefined && value !== null ? `(${value})` : '';
-                return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${sigClass}">${signal} ${valueText}</span></div>`;
+                const valueText = (value !== undefined && value !== null) ? `${value}` : '';
+                return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${sigClass}">${signal || 'NEUTRAL'} ${valueText}</span></div>`;
             };
             
+            // Trend Indicators
             document.getElementById('trendIndicators').innerHTML = [
                 renderRow('EMA 20', ind.EMA20?.value, ind.EMA20?.signal),
                 renderRow('EMA 50', ind.EMA50?.value, ind.EMA50?.signal),
+                renderRow('EMA 100', ind.EMA100?.value, ind.EMA100?.signal),
                 renderRow('EMA 200', ind.EMA200?.value, ind.EMA200?.signal),
                 renderRow('SMA 20', ind.SMA20?.value, ind.SMA20?.signal),
                 renderRow('SMA 50', ind.SMA50?.value, ind.SMA50?.signal),
@@ -459,10 +457,12 @@
                 renderRow('ADX', ind.ADX?.value, ind.ADX?.signal)
             ].join('');
             
+            // Momentum Indicators
             document.getElementById('momentumIndicators').innerHTML = [
                 renderRow('RSI (14)', ind.RSI?.value, ind.RSI?.signal),
                 renderRow('Stochastic RSI', ind.StochasticRSI?.value, ind.StochasticRSI?.signal),
                 renderRow('MACD', ind.MACD?.value, ind.MACD?.signal),
+                renderRow('MACD Hist', ind.MACD_Histogram, null),
                 renderRow('CCI', ind.CCI?.value, ind.CCI?.signal),
                 renderRow('Williams %R', ind.Williams_R?.value, ind.Williams_R?.signal),
                 renderRow('ROC', ind.ROC?.value, ind.ROC?.signal),
@@ -471,28 +471,34 @@
                 renderRow('Ultimate Osc', ind.Ultimate_Oscillator?.value, ind.Ultimate_Oscillator?.signal)
             ].join('');
             
+            // Volume Indicators
             document.getElementById('volumeIndicators').innerHTML = [
                 renderRow('OBV', ind.OBV?.value, ind.OBV?.signal),
                 renderRow('CMF', ind.CMF?.value, ind.CMF?.signal),
                 renderRow('VWAP', ind.VWAP?.value, ind.VWAP?.signal)
             ].join('');
             
+            // Volatility Indicators
             document.getElementById('volatilityIndicators').innerHTML = [
                 renderRow('Bollinger Bands', null, ind.BollingerBands?.signal),
                 renderRow('ATR', ind.ATR?.value, null),
-                renderRow('Std Deviation', ind.StandardDeviation?.value, null)
+                renderRow('Std Deviation', ind.StandardDeviation?.value, null),
+                renderRow('Keltner Channel', null, null)
             ].join('');
             
+            // Count all signals
             const allSignals = [
-                ind.EMA20?.signal, ind.EMA50?.signal, ind.EMA200?.signal, ind.SMA20?.signal, ind.SMA50?.signal, ind.SMA200?.signal,
+                ind.EMA20?.signal, ind.EMA50?.signal, ind.EMA100?.signal, ind.EMA200?.signal,
+                ind.SMA20?.signal, ind.SMA50?.signal, ind.SMA200?.signal,
                 ind.SuperTrend?.signal, ind.Ichimoku?.signal, ind.Parabolic_SAR?.signal,
                 ind.RSI?.signal, ind.StochasticRSI?.signal, ind.MACD?.signal, ind.CCI?.signal,
-                ind.Williams_R?.signal, ind.ROC?.signal, ind.Momentum?.signal, ind.MFI?.signal, ind.Ultimate_Oscillator?.signal,
-                ind.OBV?.signal, ind.CMF?.signal, ind.VWAP?.signal, ind.BollingerBands?.signal
+                ind.Williams_R?.signal, ind.ROC?.signal, ind.Momentum?.signal, ind.MFI?.signal, 
+                ind.Ultimate_Oscillator?.signal, ind.OBV?.signal, ind.CMF?.signal, ind.VWAP?.signal, 
+                ind.BollingerBands?.signal
             ];
             
-            let buy = allSignals.filter(s => s === 'BUY').length;
-            let sell = allSignals.filter(s => s === 'SELL').length;
+            let buy = allSignals.filter(s => s === 'BUY' || s === 'STRONG_BUY').length;
+            let sell = allSignals.filter(s => s === 'SELL' || s === 'STRONG_SELL').length;
             let neutral = allSignals.filter(s => s === 'NEUTRAL' || !s).length;
             let total = buy + sell + neutral;
             
@@ -502,19 +508,34 @@
             updateOdometer(buy, sell, total);
             
             let bullishPercent = total > 0 ? (buy / total) * 100 : 0;
-            let finalRec = buy > sell + 2 ? 'STRONG BUY' : buy > sell ? 'BUY' : sell > buy + 2 ? 'STRONG SELL' : sell > buy ? 'SELL' : 'NEUTRAL';
-            document.getElementById('finalRec').innerText = finalRec;
+            let finalRec = data.final_signal || (buy > sell + 2 ? 'STRONG BUY' : buy > sell ? 'BUY' : sell > buy + 2 ? 'STRONG SELL' : sell > buy ? 'SELL' : 'NEUTRAL');
+            
+            const finalRecElem = document.getElementById('finalRec');
+            finalRecElem.innerText = finalRec;
+            finalRecElem.className = 'final-recommendation ' + getSignalClass(finalRec);
+            
             document.getElementById('bullishPercent').innerText = Math.round(bullishPercent);
             document.getElementById('bullishMeterFill').style.width = bullishPercent + '%';
             
-            let summary = `Based on ${total} indicators, the verdict is ${finalRec}. `;
-            if (buy > sell) summary += `${buy} BUY vs ${sell} SELL indicates bullish momentum. `;
-            else if (sell > buy) summary += `${sell} SELL vs ${buy} BUY indicates bearish pressure. `;
-            else summary += `Mixed signals suggest consolidation. `;
-            document.getElementById('aiSummaryText').innerText = summary;
+            let summary = `🔍 ${cleanName}: Based on ${total} technical indicators, the verdict is ${finalRec}. `;
+            if (buy > sell) {
+                summary += `📈 Bullish momentum with ${buy} BUY signals vs ${sell} SELL signals. `;
+                if (ind.RSI?.value < 40) summary += `RSI at ${ind.RSI.value} suggests upside potential. `;
+            } else if (sell > buy) {
+                summary += `📉 Bearish pressure with ${sell} SELL signals vs ${buy} BUY signals. `;
+                if (ind.RSI?.value > 60) summary += `RSI at ${ind.RSI.value} indicates overbought conditions. `;
+            } else {
+                summary += `⚖️ Mixed signals suggest consolidation or sideways movement. `;
+            }
+            if (ind.ADX?.value > 25) summary += `Strong trend detected (ADX: ${ind.ADX.value}). `;
+            else if (ind.ADX?.value < 20) summary += `Weak trend, range-bound market. `;
+            
+            document.getElementById('aiSummaryText').innerHTML = summary;
             
         } catch (err) {
+            console.error(err);
             document.getElementById('aiSummaryText').innerHTML = `❌ ${err.message}`;
+            document.getElementById('symbolTitle').innerText = 'Error';
         } finally {
             loading.classList.add('hidden');
             btn.disabled = false;
