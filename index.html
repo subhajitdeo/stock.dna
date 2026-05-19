@@ -142,8 +142,8 @@
         .odometer-unit { font-size: 0.8rem; color: #666; font-weight: 500; }
         .odometer-progress { background: #1a1a1a; border-radius: 30px; height: 6px; overflow: hidden; margin: 0.5rem 0; }
         .odometer-fill { height: 100%; border-radius: 30px; transition: width 0.8s cubic-bezier(0.22, 0.97, 0.36, 1.02); width: 0%; }
-        .buy-fill { background: linear-gradient(90deg, #00d26a, #00d26a); box-shadow: 0 0 10px rgba(0,210,106,0.5); }
-        .sell-fill { background: linear-gradient(90deg, #ff3040, #ff3040); box-shadow: 0 0 10px rgba(255,48,64,0.5); }
+        .buy-fill { background: #00d26a; box-shadow: 0 0 10px rgba(0,210,106,0.5); }
+        .sell-fill { background: #ff3040; box-shadow: 0 0 10px rgba(255,48,64,0.5); }
         .net-fill { background: linear-gradient(90deg, #3b82f6, #a855f7); box-shadow: 0 0 10px rgba(59,130,246,0.5); }
         .odometer-stats { font-size: 0.7rem; color: #8a8a8a; margin-top: 0.5rem; }
         
@@ -408,19 +408,15 @@
                 }
             } catch (e) { /* next */ }
         }
-        
         if (!csvText) {
             console.warn('Using fallback symbol list');
             return ['RELIANCE', 'TCS', 'INFY', 'WIPRO', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'LT', 'HINDUNILVR', 'AXISBANK', 'KOTAKBANK'];
         }
-        
-        const lines = csvText.split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0 && /^[A-Z]+$/.test(line));
+        const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0 && /^[A-Z]+$/.test(line));
         return lines;
     }
     
-    // ---- Chart setup ----
+    // ---- Chart setup (restored premium colours) ----
     function createChart() {
         if (chart) return;
         const container = chartContainer;
@@ -429,21 +425,21 @@
         
         chart = LightweightCharts.createChart(container, {
             layout: {
-                background: { color: '#000000' },
+                background: { color: '#0a1020' },  // original premium dark-blue
                 textColor: '#cbd5e6',
                 fontSize: isMobile() ? 10 : 12
             },
             grid: {
-                vertLines: { color: '#1a1a1a' },
-                horzLines: { color: '#1a1a1a' }
+                vertLines: { color: '#1e293b' },
+                horzLines: { color: '#1e293b' }
             },
             crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
             rightPriceScale: {
-                borderColor: '#333',
+                borderColor: '#2d3a5e',
                 scaleMargins: { top: 0.1, bottom: 0.2 }
             },
             timeScale: {
-                borderColor: '#333',
+                borderColor: '#2d3a5e',
                 timeVisible: true,
                 secondsVisible: false,
                 tickMarkFormatter: (time) => {
@@ -478,7 +474,6 @@
     
     function updateChart(candles) {
         if (!chart) createChart();
-        
         const formattedCandles = candles.map(c => {
             let time = c.time;
             if (typeof time === 'string') {
@@ -595,19 +590,19 @@
         sellCountOdo.innerText = sellCount;
     }
     
-    // ---- Gauge update ----
+    // ---- Gauge update (now purely based on computed signals) ----
     function updateGauge(buyCount, sellCount, neutralCount, total, finalRec, bullishPercent, summaryText) {
-        // Compute needle angle: 180° (Strong Sell) to 360° (Strong Buy)
-        const angle = 180 + (bullishPercent / 100) * 180; // 0% -> 180°, 100% -> 360°
-        gaugeNeedle.style.transform = `rotate(${angle - 270}deg)`; // pivot at 270° (neutral top)
+        // Needle angle: 0% bullish = -90deg (left, strong sell), 100% bullish = +90deg (right, strong buy)
+        const angle = -90 + (bullishPercent / 100) * 180;  // -90 to +90
+        gaugeNeedle.style.transform = `rotate(${angle}deg)`;
         
         // Active arc dashoffset (length = 314.16)
         const totalLen = 314.16;
-        const progress = (angle - 180) / 180; // 0 to 1
+        const progress = (angle + 90) / 180; // 0 (strong sell) to 1 (strong buy)
         const offset = totalLen * (1 - progress);
         gaugeActiveArc.setAttribute('stroke-dashoffset', offset);
         
-        // Sentiment text
+        // Sentiment text styling
         let textClass = '';
         switch (finalRec) {
             case 'STRONG BUY': textClass = 'strong-buy-text'; break;
@@ -619,12 +614,9 @@
         gaugeSentimentText.textContent = finalRec;
         gaugeSentimentText.className = 'sentiment-text ' + textClass;
         
-        // Stats counts
         gaugeSellCount.textContent = sellCount;
         gaugeNeutralCount.textContent = neutralCount;
         gaugeBuyCount.textContent = buyCount;
-        
-        // Summary
         gaugeSummaryText.innerHTML = summaryText;
     }
     
@@ -638,6 +630,7 @@
         loadingOverlay.classList.remove('hidden');
         searchBtn.disabled = true;
         updateOdometers(0, 0, 0);
+        // Reset gauge to neutral
         gaugeSentimentText.textContent = '...';
         gaugeSentimentText.className = 'sentiment-text neutral-text';
         gaugeNeedle.style.transform = 'rotate(0deg)';
@@ -690,6 +683,7 @@
                 renderRow('Std Deviation', ind.StandardDeviation?.value, null),
             ].join('');
             
+            // Count live signals (ignore data.final_signal)
             const signalKeys = [
                 'EMA20', 'EMA50', 'EMA100', 'EMA200',
                 'SMA20', 'SMA50', 'SMA200',
@@ -712,18 +706,16 @@
             const total = buy + sell + neutral;
             const bullishPercent = total > 0 ? (buy / total) * 100 : 0;
             
-            let finalRec = data.final_signal;
-            if (!finalRec) {
-                if (buy > sell + 2) finalRec = 'STRONG BUY';
-                else if (buy > sell) finalRec = 'BUY';
-                else if (sell > buy + 2) finalRec = 'STRONG SELL';
-                else if (sell > buy) finalRec = 'SELL';
-                else finalRec = 'NEUTRAL';
-            }
+            // Compute verdict purely from indicator counts
+            let finalRec = 'NEUTRAL';
+            if (buy > sell + 2) finalRec = 'STRONG BUY';
+            else if (buy > sell) finalRec = 'BUY';
+            else if (sell > buy + 2) finalRec = 'STRONG SELL';
+            else if (sell > buy) finalRec = 'SELL';
             
             updateOdometers(buy, sell, total);
             
-            let summary = `🔍 <b>${cleanName}</b>: Based on ${total} indicators, verdict <b>${finalRec}</b>. `;
+            let summary = `🔍 <b>${cleanName}</b>: ${total} indicators – verdict <b>${finalRec}</b>. `;
             if (buy > sell) summary += `📈 ${buy} BUY vs ${sell} SELL. `;
             else if (sell > buy) summary += `📉 ${sell} SELL vs ${buy} BUY. `;
             else summary += `⚖️ Mixed signals. `;
