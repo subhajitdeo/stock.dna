@@ -1,11 +1,11 @@
 {
   "symbol": "MAXHEALTH",
-  "updated_at": "2026-05-18T18:00:01.670480",
+  "updated_at": "2026-05-19T07:03:59.017747+00:00",
   "latest_price": 1058.55,
-  "final_signal": "BUY",
+  "final_signal": "SELL",
   "signal_summary": {
-    "buy_signals": 4,
-    "sell_signals": 3,
+    "buy_signals": 3,
+    "sell_signals": 5,
     "total_indicators": 10
   },
   "candles": [
@@ -2004,18 +2004,18 @@
   ],
   "indicators": {
     "RSI": {
-      "value": 67.89,
+      "value": 65.88,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 68.6,
-      "signal": "NEUTRAL"
+      "value": 100.0,
+      "signal": "SELL"
     },
     "MACD": {
       "value": 14.29,
-      "signal": "BUY"
+      "signal": "SELL"
     },
-    "MACD_Histogram": 5.12,
+    "MACD_Histogram": 0,
     "CCI": {
       "value": 171.48,
       "signal": "SELL"
@@ -2041,7 +2041,7 @@
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 0.51,
+      "value": null,
       "signal": "WEAK"
     },
     "SuperTrend": {
@@ -2054,9 +2054,9 @@
       "signal": "BUY"
     },
     "Aroon": {
-      "up": 4.0,
-      "down": 100.0,
-      "signal": "SELL"
+      "up": 100.0,
+      "down": 4.0,
+      "signal": "BUY"
     },
     "EMA20": {
       "value": 1019.25,
@@ -2067,11 +2067,11 @@
       "signal": "BUY"
     },
     "EMA100": {
-      "value": 1030.82,
+      "value": 1031.48,
       "signal": "BUY"
     },
     "EMA200": {
-      "value": 1071.83,
+      "value": 1087.93,
       "signal": "SELL"
     },
     "SMA20": {
@@ -2087,28 +2087,28 @@
       "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 1053.47,
+      "upper": 1054.43,
       "middle": 1016.73,
-      "lower": 980.0,
+      "lower": 979.04,
       "signal": "SELL"
     },
     "KeltnerChannel": {
-      "upper": 1069.33,
+      "upper": 1071.6,
       "middle": 1019.25,
-      "lower": 969.16
+      "lower": 966.9
     },
     "DonchianChannel": {
       "upper": 1063.0,
       "lower": 934.95
     },
     "ATR": {
-      "value": 27.57
+      "value": 26.42
     },
     "StandardDeviation": {
-      "value": 18.37
+      "value": 18.85
     },
     "OBV": {
-      "value": -55940374,
+      "value": -58137466,
       "signal": "BUY"
     },
     "CMF": {
@@ -2120,7 +2120,7 @@
       "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": -5656.0495
+      "value": Infinity
     }
   }
 }

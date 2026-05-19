@@ -1,11 +1,11 @@
 {
   "symbol": "CARBORUNIV",
-  "updated_at": "2026-05-18T17:59:19.380940",
+  "updated_at": "2026-05-19T07:03:41.032070+00:00",
   "latest_price": 1098.25,
-  "final_signal": "NEUTRAL",
+  "final_signal": "STRONG_SELL",
   "signal_summary": {
-    "buy_signals": 4,
-    "sell_signals": 4,
+    "buy_signals": 3,
+    "sell_signals": 6,
     "total_indicators": 10
   },
   "candles": [
@@ -1996,18 +1996,18 @@
   ],
   "indicators": {
     "RSI": {
-      "value": 75.11,
+      "value": 75.81,
       "signal": "SELL"
     },
     "StochasticRSI": {
-      "value": 77.53,
-      "signal": "NEUTRAL"
+      "value": 90.36,
+      "signal": "SELL"
     },
     "MACD": {
       "value": 51.95,
-      "signal": "BUY"
+      "signal": "SELL"
     },
-    "MACD_Histogram": 6.97,
+    "MACD_Histogram": 0,
     "CCI": {
       "value": 215.33,
       "signal": "SELL"
@@ -2029,12 +2029,12 @@
       "signal": "SELL"
     },
     "Ultimate_Oscillator": {
-      "value": 61.32,
+      "value": 62.6,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 80.76,
-      "signal": "STRONG"
+      "value": null,
+      "signal": "WEAK"
     },
     "SuperTrend": {
       "signal": "BUY"
@@ -2046,9 +2046,9 @@
       "signal": "BUY"
     },
     "Aroon": {
-      "up": 4.0,
-      "down": 100.0,
-      "signal": "SELL"
+      "up": 100.0,
+      "down": 4.0,
+      "signal": "BUY"
     },
     "EMA20": {
       "value": 996.41,
@@ -2059,11 +2059,11 @@
       "signal": "BUY"
     },
     "EMA100": {
-      "value": 892.14,
+      "value": 892.11,
       "signal": "BUY"
     },
     "EMA200": {
-      "value": 894.84,
+      "value": 902.93,
       "signal": "BUY"
     },
     "SMA20": {
@@ -2079,28 +2079,28 @@
       "signal": "BUY"
     },
     "BollingerBands": {
-      "upper": 1091.76,
+      "upper": 1094.36,
       "middle": 991.8,
-      "lower": 891.83,
+      "lower": 889.23,
       "signal": "SELL"
     },
     "KeltnerChannel": {
-      "upper": 1070.43,
+      "upper": 1072.62,
       "middle": 996.41,
-      "lower": 922.39
+      "lower": 920.2
     },
     "DonchianChannel": {
       "upper": 1166.4,
       "lower": 923.0
     },
     "ATR": {
-      "value": 42.26
+      "value": 41.85
     },
     "StandardDeviation": {
-      "value": 49.98
+      "value": 51.28
     },
     "OBV": {
-      "value": 12752537,
+      "value": 12664278,
       "signal": "SELL"
     },
     "CMF": {
@@ -2112,7 +2112,7 @@
       "signal": "BUY"
     },
     "EaseOfMovement": {
-      "value": 162177.6549
+      "value": -Infinity
     }
   }
 }
