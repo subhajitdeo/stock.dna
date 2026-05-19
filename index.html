@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0a0f1e">
     <meta name="description" content="Advanced NIFTY 500 Technical Analysis Dashboard">
     <title>SONALIKA</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
@@ -12,17 +12,18 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #000000;
+            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
             font-family: 'Inter', sans-serif;
             color: #eef2ff;
             padding: 1rem;
             min-height: 100vh;
         }
         .app-container { max-width: 1600px; margin: 0 auto; }
-        .glass-header, .chart-glass-card, .category-card, .odometer-card, .sentiment-gauge-card {
-            background: #0a0a0a;
-            border: 1px solid #1f1f1f;
-            border-radius: 1.25rem;
+        .glass-header, .chart-glass-card, .category-card, .recommendation-card, .ai-summary-card, .odometer-card {
+            background: rgba(12, 20, 30, 0.55);
+            backdrop-filter: blur(12px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.25);
             transition: all 0.2s;
         }
         .glass-header {
@@ -37,16 +38,16 @@
         .logo-area { display: flex; align-items: center; gap: 0.5rem; font-size: 1.3rem; font-weight: 700; }
         .logo-area i { color: #3b82f6; font-size: 1.5rem; }
         .accent { color: #3b82f6; }
-        .badge { background: #1a1a1a; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.7rem; }
+        .badge { background: #1e2a4a; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.7rem; }
         
         .search-wrapper {
             position: relative;
             display: flex;
             gap: 0.5rem;
-            background: #0a0a0a;
+            background: rgba(0,0,0,0.5);
             border-radius: 60px;
             padding: 0.2rem 0.2rem 0.2rem 1rem;
-            border: 1px solid #333;
+            border: 1px solid #2d3a5e;
         }
         .search-wrapper input {
             background: transparent;
@@ -56,33 +57,33 @@
             width: 220px;
             outline: none;
         }
-        .search-wrapper input::placeholder { color: #666; }
+        .search-wrapper input::placeholder { color: #64748b; }
         .suggestions-dropdown {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            background: #1a1a1a;
+            background: #1e293b;
             border-radius: 12px;
             margin-top: 8px;
             max-height: 300px;
             overflow-y: auto;
             z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-            border: 1px solid #333;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid #3b82f6;
             display: none;
             scrollbar-width: thin;
-            scrollbar-color: #3b82f6 #1a1a1a;
+            scrollbar-color: #3b82f6 #1e293b;
         }
         .suggestions-dropdown::-webkit-scrollbar { width: 6px; }
-        .suggestions-dropdown::-webkit-scrollbar-track { background: #1a1a1a; }
+        .suggestions-dropdown::-webkit-scrollbar-track { background: #1e293b; }
         .suggestions-dropdown::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 6px; }
         .suggestions-dropdown.show { display: block; }
         .suggestion-item {
             padding: 10px 15px;
             cursor: pointer;
             transition: background 0.2s;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #334155;
             font-size: 0.85rem;
         }
         .suggestion-item:hover, .suggestion-item.active { background: #3b82f6; }
@@ -90,7 +91,7 @@
         .suggestion-highlight { font-weight: bold; color: #3b82f6; background: rgba(59,130,246,0.2); }
         
         .btn-primary {
-            background: #2563eb;
+            background: linear-gradient(135deg, #2563eb, #1e40af);
             border: none;
             padding: 0.5rem 1.2rem;
             border-radius: 40px;
@@ -102,15 +103,18 @@
             align-items: center;
             gap: 0.3rem;
         }
-        .btn-primary:hover { box-shadow: 0 0 15px rgba(37,99,235,0.7); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary:hover { box-shadow: 0 0 15px rgba(37,99,235,0.5); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
         
         .chart-glass-card { padding: 1rem; margin-bottom: 1.5rem; position: relative; }
         .chart-header { display: flex; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; }
         .symbol-title {
             font-weight: 700;
             font-size: 1.3rem;
-            color: #fff;
+            background: linear-gradient(135deg,#fff,#93c5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
         #chartContainer { border-radius: 1rem; overflow: hidden; width: 100%; }
         .loading-overlay {
@@ -119,111 +123,53 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.8);
             backdrop-filter: blur(8px);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            border-radius: 1.25rem;
+            border-radius: 1.5rem;
             gap: 1rem;
             z-index: 20;
         }
-        .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #2c3e66; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none !important; }
         
         .odometer-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
         .odometer-card { padding: 1.2rem; text-align: center; transition: transform 0.2s; }
-        .odometer-card:hover { transform: translateY(-3px); border-color: #3b82f6; }
-        .odometer-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #8a8a8a; margin-bottom: 0.5rem; }
+        .odometer-card:hover { transform: translateY(-3px); border-color: rgba(59, 130, 246, 0.5); }
+        .odometer-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #94a3b8; margin-bottom: 0.5rem; }
         .odometer-wrapper { display: flex; align-items: baseline; justify-content: center; gap: 0.2rem; margin-bottom: 0.8rem; }
-        .odometer-digits { font-size: 2.5rem; font-weight: 800; font-family: 'Inter', monospace; letter-spacing: 2px; color: #fff; }
-        .odometer-unit { font-size: 0.8rem; color: #666; font-weight: 500; }
-        .odometer-progress { background: #1a1a1a; border-radius: 30px; height: 6px; overflow: hidden; margin: 0.5rem 0; }
+        .odometer-digits { font-size: 2.5rem; font-weight: 800; font-family: 'Inter', monospace; letter-spacing: 2px; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .odometer-unit { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+        .odometer-progress { background: #1e293b; border-radius: 30px; height: 6px; overflow: hidden; margin: 0.5rem 0; }
         .odometer-fill { height: 100%; border-radius: 30px; transition: width 0.8s cubic-bezier(0.22, 0.97, 0.36, 1.02); width: 0%; }
-        .buy-fill { background: #00d26a; box-shadow: 0 0 10px rgba(0,210,106,0.5); }
-        .sell-fill { background: #ff3040; box-shadow: 0 0 10px rgba(255,48,64,0.5); }
-        .net-fill { background: linear-gradient(90deg, #3b82f6, #a855f7); box-shadow: 0 0 10px rgba(59,130,246,0.5); }
-        .odometer-stats { font-size: 0.7rem; color: #8a8a8a; margin-top: 0.5rem; }
+        .buy-fill { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .sell-fill { background: linear-gradient(90deg, #ef4444, #f87171); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .net-fill { background: linear-gradient(90deg, #3b82f6, #a855f7); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .odometer-stats { font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem; }
         
         .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; }
         .indicators-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-        .category-card { padding: 1rem; }
+        .category-card, .recommendation-card, .ai-summary-card { padding: 1rem; }
         .cat-header { font-weight: 600; border-left: 3px solid #3b82f6; padding-left: 0.6rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
         .indicators-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .indicator-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 0.2rem 0; border-bottom: 1px dashed #1e2a44; }
         .indicator-name { font-weight: 500; color: #bfd9ff; }
         .signal-badge { font-weight: 700; padding: 0.1rem 0.6rem; border-radius: 30px; font-size: 0.7rem; white-space: nowrap; }
-        .buy { background: #00d26a20; color: #00d26a; border: 1px solid #00d26a; }
-        .strong-buy { background: #00d26a30; color: #6ee7b7; border: 1px solid #059669; }
-        .sell { background: #ff304020; color: #ff3040; border: 1px solid #ff3040; }
-        .strong-sell { background: #ff003330; color: #ff3040; border: 1px solid #ff0033; }
-        .neutral { background: #66666630; color: #cbd5e1; border: 1px solid #666; }
-        
-        /* ---- GAUGE CARD ---- */
-        .sentiment-gauge-card {
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        .gauge-container {
-            width: 100%;
-            max-width: 320px;
-            position: relative;
-        }
-        .gauge-container svg {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        .gauge-needle {
-            transform-origin: 150px 130px;
-            transition: transform 0.6s cubic-bezier(0.22, 0.97, 0.36, 1.02);
-        }
-        .sentiment-text {
-            font-size: 2rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-align: center;
-        }
-        .sentiment-text.strong-sell-text { color: #ff0033; }
-        .sentiment-text.sell-text { color: #ff3040; }
-        .sentiment-text.neutral-text { color: #8a8a8a; }
-        .sentiment-text.buy-text { color: #00d26a; }
-        .sentiment-text.strong-buy-text { color: #00d26a; filter: drop-shadow(0 0 6px #00d26a); }
-        .stats-row {
-            display: flex;
-            width: 100%;
-            justify-content: space-around;
-            border-top: 1px solid #1f1f1f;
-            padding-top: 1rem;
-        }
-        .stat-item {
-            text-align: center;
-            font-size: 0.8rem;
-            color: #8a8a8a;
-        }
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #fff;
-        }
-        .stat-label {
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 0.2rem;
-        }
-        .gauge-summary {
-            font-size: 0.85rem;
-            color: #bfbfbf;
-            text-align: center;
-            line-height: 1.4;
-            margin-top: 0.5rem;
-        }
+        .buy { background: #10b98120; color: #34d399; border: 1px solid #10b981; }
+        .strong-buy { background: #04785730; color: #6ee7b7; border: 1px solid #059669; }
+        .sell { background: #ef444420; color: #f87171; border: 1px solid #ef4444; }
+        .strong-sell { background: #b91c1c30; color: #fca5a5; border: 1px solid #dc2626; }
+        .neutral { background: #47556930; color: #cbd5e1; border: 1px solid #6b7280; }
+        .final-recommendation { font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0; }
+        .strength-meter-wrapper { margin: 0.8rem 0; }
+        .meter-bar-bg { background: #1e293b; border-radius: 30px; height: 8px; overflow: hidden; }
+        .meter-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #a855f7); border-radius: 30px; transition: width 0.5s; }
+        .signal-stats { display: flex; justify-content: space-around; margin-top: 0.8rem; font-size: 0.8rem; }
+        .ai-summary-card .summary-text { line-height: 1.4; font-size: 0.85rem; color: #ccdeff; margin-top: 0.5rem; }
         
         @media (max-width: 768px) {
             body { padding: 0.8rem; }
@@ -233,10 +179,9 @@
             .search-wrapper input { width: 140px; }
             .glass-header { flex-direction: column; align-items: stretch; }
             .symbol-title { font-size: 1.1rem; }
-            .sentiment-text { font-size: 1.5rem; }
+            .final-recommendation { font-size: 1.4rem; }
             .odometer-digits { font-size: 1.8rem; }
             #chartContainer { min-height: 320px; }
-            .gauge-container { max-width: 250px; }
         }
         @media (max-width: 480px) {
             .search-wrapper input { width: 120px; }
@@ -302,49 +247,24 @@
             <div class="category-card"><div class="cat-header"><i class="fas fa-chart-column"></i> Volume Indicators</div><div class="indicators-list" id="volumeIndicators"></div></div>
             <div class="category-card"><div class="cat-header"><i class="fas fa-wave-square"></i> Volatility Indicators</div><div class="indicators-list" id="volatilityIndicators"></div></div>
         </div>
-        
-        <!-- Merged Sentiment Gauge Card -->
-        <div class="sentiment-gauge-card">
-            <div class="gauge-container">
-                <svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#ff0033" />
-                            <stop offset="25%" stop-color="#ff3040" />
-                            <stop offset="50%" stop-color="#666666" />
-                            <stop offset="75%" stop-color="#00d26a" />
-                            <stop offset="100%" stop-color="#00d26a" />
-                        </linearGradient>
-                    </defs>
-                    <path d="M 50 120 A 100 100 0 0 1 250 120" fill="none" stroke="#2a2a2a" stroke-width="20" stroke-linecap="round" />
-                    <path id="gaugeActiveArc" d="M 50 120 A 100 100 0 0 1 250 120" fill="none" stroke="url(#gaugeGradient)" stroke-width="20" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" />
-                    <text x="40" y="145" text-anchor="middle" font-size="10" fill="#8a8a8a">STRONG SELL</text>
-                    <text x="80" y="155" text-anchor="middle" font-size="10" fill="#8a8a8a">SELL</text>
-                    <text x="150" y="165" text-anchor="middle" font-size="12" fill="#ffffff">NEUTRAL</text>
-                    <text x="220" y="155" text-anchor="middle" font-size="10" fill="#8a8a8a">BUY</text>
-                    <text x="260" y="145" text-anchor="middle" font-size="10" fill="#8a8a8a">STRONG BUY</text>
-                    <g id="gaugeNeedle" class="gauge-needle" style="transform: rotate(0deg);">
-                        <line x1="150" y1="130" x2="150" y2="40" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
-                        <circle cx="150" cy="130" r="5" fill="#ffffff" />
-                    </g>
-                </svg>
-            </div>
-            <div id="gaugeSentimentText" class="sentiment-text neutral-text">NEUTRAL</div>
-            <div class="stats-row">
-                <div class="stat-item">
-                    <div class="stat-value" id="gaugeSellCount">0</div>
-                    <div class="stat-label">Sell</div>
+        <div class="insights-panel">
+            <div class="recommendation-card">
+                <h3><i class="fas fa-robot"></i> Overall Verdict</h3>
+                <div id="finalRec" class="final-recommendation">—</div>
+                <div class="strength-meter-wrapper">
+                    <div class="meter-label">Bullish Strength <span id="bullishPercent">0</span>%</div>
+                    <div class="meter-bar-bg"><div id="bullishMeterFill" class="meter-fill"></div></div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="gaugeNeutralCount">0</div>
-                    <div class="stat-label">Neutral</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="gaugeBuyCount">0</div>
-                    <div class="stat-label">Buy</div>
+                <div class="signal-stats">
+                    <span><i class="fas fa-arrow-up"></i> BUY: <span id="buyCount">0</span></span>
+                    <span><i class="fas fa-arrow-down"></i> SELL: <span id="sellCount">0</span></span>
+                    <span><i class="fas fa-minus-circle"></i> NEUTRAL: <span id="neutralCount">0</span></span>
                 </div>
             </div>
-            <div id="gaugeSummaryText" class="gauge-summary">Analyze a stock to see AI synopsis.</div>
+            <div class="ai-summary-card">
+                <div class="cat-header"><i class="fas fa-microchip"></i> AI Market Synopsis</div>
+                <div id="aiSummaryText" class="summary-text">Initializing dashboard...</div>
+            </div>
         </div>
     </div>
 </div>
@@ -367,20 +287,18 @@
     const netFill = document.getElementById('netFill');
     const buyCountOdo = document.getElementById('buyCountOdo');
     const sellCountOdo = document.getElementById('sellCountOdo');
+    const buyCountEl = document.getElementById('buyCount');
+    const sellCountEl = document.getElementById('sellCount');
+    const neutralCountEl = document.getElementById('neutralCount');
+    const finalRecEl = document.getElementById('finalRec');
+    const bullishPercentEl = document.getElementById('bullishPercent');
+    const bullishMeterFill = document.getElementById('bullishMeterFill');
+    const aiSummaryText = document.getElementById('aiSummaryText');
     
     const trendIndicators = document.getElementById('trendIndicators');
     const momentumIndicators = document.getElementById('momentumIndicators');
     const volumeIndicators = document.getElementById('volumeIndicators');
     const volatilityIndicators = document.getElementById('volatilityIndicators');
-    
-    // Gauge elements
-    const gaugeNeedle = document.getElementById('gaugeNeedle');
-    const gaugeActiveArc = document.getElementById('gaugeActiveArc');
-    const gaugeSentimentText = document.getElementById('gaugeSentimentText');
-    const gaugeSellCount = document.getElementById('gaugeSellCount');
-    const gaugeNeutralCount = document.getElementById('gaugeNeutralCount');
-    const gaugeBuyCount = document.getElementById('gaugeBuyCount');
-    const gaugeSummaryText = document.getElementById('gaugeSummaryText');
     
     // ---- State ----
     let allSymbols = [];
@@ -391,40 +309,63 @@
     
     const isMobile = () => window.innerWidth < 768;
     
-    // ---- Load symbols ----
+    // ---- Load symbols from CSV ----
     async function loadAllSymbols() {
         const paths = ['stock.dna/nifty500.csv', '/stock.dna/nifty500.csv'];
         let csvText = null;
         for (const path of paths) {
             try {
                 const response = await fetch(path);
-                if (response.ok) { csvText = await response.text(); break; }
-            } catch (e) {}
+                if (response.ok) {
+                    csvText = await response.text();
+                    break;
+                }
+            } catch (e) { /* try next */ }
         }
+        
         if (!csvText) {
+            console.warn('Using fallback symbol list');
             return ['RELIANCE', 'TCS', 'INFY', 'WIPRO', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'LT', 'HINDUNILVR', 'AXISBANK', 'KOTAKBANK'];
         }
-        return csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0 && /^[A-Z]+$/.test(l));
+        
+        const lines = csvText.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0 && /^[A-Z]+$/.test(line));
+        
+        return lines;
     }
     
-    // ---- Chart (premium dark) ----
+    // ---- Chart creation ----
     function createChart() {
         if (chart) return;
         const container = chartContainer;
         container.innerHTML = '';
         const height = isMobile() ? 350 : 450;
+        
         chart = LightweightCharts.createChart(container, {
-            layout: { background: { color: '#0a1020' }, textColor: '#cbd5e6', fontSize: isMobile() ? 10 : 12 },
-            grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+            layout: {
+                background: { color: '#0a1020' },
+                textColor: '#cbd5e6',
+                fontSize: isMobile() ? 10 : 12
+            },
+            grid: {
+                vertLines: { color: '#1e293b' },
+                horzLines: { color: '#1e293b' }
+            },
             crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-            rightPriceScale: { borderColor: '#2d3a5e', scaleMargins: { top: 0.1, bottom: 0.2 } },
+            rightPriceScale: {
+                borderColor: '#2d3a5e',
+                scaleMargins: { top: 0.1, bottom: 0.2 }
+            },
             timeScale: {
                 borderColor: '#2d3a5e',
                 timeVisible: true,
                 secondsVisible: false,
+                // FIXED: Formatter now receives Unix timestamp (seconds) and displays correctly
                 tickMarkFormatter: (time) => {
-                    const d = new Date(time * 1000);
-                    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                    const date = new Date(time * 1000);
+                    if (isNaN(date.getTime())) return '';
+                    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
                 },
                 barSpacing: isMobile() ? 6 : 8,
                 minBarSpacing: 4,
@@ -432,115 +373,151 @@
             width: container.clientWidth,
             height: height
         });
-        candleSeries = chart.addCandlestickSeries({ upColor: '#26a69a', downColor: '#ef5350', borderVisible: false });
-        volumeSeries = chart.addHistogramSeries({ color: '#26a69a70', priceFormat: { type: 'volume' }, priceScaleId: 'volume' });
-        chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 }, visible: false });
+        
+        candleSeries = chart.addCandlestickSeries({
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderVisible: false,
+        });
+        
+        volumeSeries = chart.addHistogramSeries({
+            color: '#26a69a70',
+            priceFormat: { type: 'volume' },
+            priceScaleId: 'volume',
+        });
+        
+        chart.priceScale('volume').applyOptions({
+            scaleMargins: { top: 0.8, bottom: 0 },
+            visible: false,
+        });
     }
     
+    // ---- Update chart with new data ----
     function updateChart(candles) {
         if (!chart) createChart();
-        const formatted = candles.map(c => {
-            let t = c.time;
-            if (typeof t === 'string') t = Math.floor(new Date(t).getTime() / 1000);
-            else if (typeof t === 'number' && t > 1e12) t = Math.floor(t / 1000);
-            return { time: t, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume || 0 };
-        }).sort((a,b) => a.time - b.time);
         
-        candleSeries.setData(formatted);
-        volumeSeries.setData(formatted.map(c => ({ time: c.time, value: c.volume, color: c.close > c.open ? '#26a69a70' : '#ef535070' })));
+        // Convert all time entries to Unix timestamps (seconds)
+        const formattedCandles = candles.map(c => {
+            let time = c.time;
+            if (typeof time === 'string') {
+                time = Math.floor(new Date(time).getTime() / 1000);
+            } else if (typeof time === 'number') {
+                // If already a number, assume milliseconds if > 1e12
+                if (time > 1e12) time = Math.floor(time / 1000);
+            }
+            return {
+                time: time,
+                open: c.open,
+                high: c.high,
+                low: c.low,
+                close: c.close,
+                volume: c.volume || 0
+            };
+        }).sort((a, b) => a.time - b.time);
+        
+        candleSeries.setData(formattedCandles);
+        volumeSeries.setData(formattedCandles.map(c => ({
+            time: c.time,
+            value: c.volume || 0,
+            color: c.close > c.open ? '#26a69a70' : '#ef535070'
+        })));
+        
         chart.timeScale().fitContent();
-        if (formatted.length > 180) {
-            const last = formatted[formatted.length-1].time;
-            const start = new Date(last * 1000);
-            start.setMonth(start.getMonth() - 6);
-            chart.timeScale().setVisibleRange({ from: Math.floor(start.getTime()/1000), to: last });
+        
+        // Show last 6 months if data is long
+        if (formattedCandles.length > 180) {
+            const lastTime = formattedCandles[formattedCandles.length - 1].time;
+            const endDate = new Date(lastTime * 1000);
+            const startDate = new Date(endDate);
+            startDate.setMonth(startDate.getMonth() - 6);
+            const from = Math.floor(startDate.getTime() / 1000);
+            chart.timeScale().setVisibleRange({ from, to: lastTime });
         }
     }
     
-    window.addEventListener('resize', () => {
+    // ---- Responsive resize ----
+    function handleResize() {
         if (!chart) return;
-        chart.applyOptions({ width: chartContainer.clientWidth, height: isMobile() ? 350 : 450, layout: { fontSize: isMobile() ? 10 : 12 }, timeScale: { barSpacing: isMobile() ? 6 : 8 } });
-    });
+        chart.applyOptions({
+            width: chartContainer.clientWidth,
+            height: isMobile() ? 350 : 450,
+            layout: { fontSize: isMobile() ? 10 : 12 },
+            timeScale: { barSpacing: isMobile() ? 6 : 8 }
+        });
+    }
+    window.addEventListener('resize', handleResize);
     
-    // ---- Data ----
+    // ---- Fetch data ----
     async function fetchStockData(symbol) {
-        const clean = symbol.toUpperCase().replace(/\.NS$/i, '');
-        const paths = [`stock.dna/data/processed/${clean}.json`, `/stock.dna/data/processed/${clean}.json`];
-        for (const p of paths) {
-            try { const r = await fetch(p); if (r.ok) return await r.json(); } catch (e) {}
+        const cleanSymbol = symbol.toUpperCase().replace(/\.NS$/i, '');
+        const paths = [
+            `stock.dna/data/processed/${cleanSymbol}.json`,
+            `/stock.dna/data/processed/${cleanSymbol}.json`
+        ];
+        let data = null;
+        for (const path of paths) {
+            try {
+                const res = await fetch(path);
+                if (res.ok) {
+                    data = await res.json();
+                    break;
+                }
+            } catch (e) { /* next */ }
         }
-        throw new Error(`No data found for ${clean}. Ensure it's a NIFTY 500 stock.`);
+        if (!data) throw new Error(`No data found for ${cleanSymbol}. Ensure it's a NIFTY 500 stock.`);
+        return data;
     }
     
-    // ---- Helpers ----
+    // ---- Helper: SuperTrend ----
     function calculateSuperTrendValue(candles, period = 10, multiplier = 3) {
         if (!candles || candles.length < period) return null;
-        const c = candles, cl = c.map(x => x.close), h = c.map(x => x.high), l = c.map(x => x.low);
+        const closes = candles.map(c => c.close);
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
         const tr = [];
-        for (let i=1; i<h.length; i++) tr.push(Math.max(h[i]-l[i], Math.abs(h[i]-cl[i-1]), Math.abs(l[i]-cl[i-1])));
-        const atr = tr.slice(-period).reduce((a,b)=>a+b,0)/period;
-        return ((h[h.length-1]+l[l.length-1])/2 - multiplier*atr).toFixed(2);
+        for (let i = 1; i < highs.length; i++) {
+            tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1])));
+        }
+        const atr = tr.slice(-period).reduce((a,b) => a + b, 0) / period;
+        const hl2 = (highs[highs.length-1] + lows[lows.length-1]) / 2;
+        return (hl2 - multiplier * atr).toFixed(2);
     }
     
-    function getSignalClass(s) {
-        const sig = (s||'NEUTRAL').toUpperCase();
-        if (sig === 'BUY') return 'buy';
-        if (sig === 'SELL') return 'sell';
-        if (sig === 'STRONG_BUY') return 'strong-buy';
-        if (sig === 'STRONG_SELL') return 'strong-sell';
+    // ---- Signal helpers ----
+    function getSignalClass(signal) {
+        const s = (signal || 'NEUTRAL').toUpperCase();
+        if (s === 'BUY') return 'buy';
+        if (s === 'SELL') return 'sell';
+        if (s === 'STRONG_BUY') return 'strong-buy';
+        if (s === 'STRONG_SELL') return 'strong-sell';
         return 'neutral';
     }
     
-    function renderRow(name, val, signal) {
-        return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${getSignalClass(signal)}">${signal||'NEUTRAL'}${val!=null?' '+val:''}</span></div>`;
+    function renderRow(name, value, signal) {
+        const sigClass = getSignalClass(signal);
+        const valueText = (value !== undefined && value !== null) ? ` ${value}` : '';
+        const displaySignal = signal || 'NEUTRAL';
+        return `<div class="indicator-row">
+            <span class="indicator-name">${name}</span>
+            <span class="signal-badge ${sigClass}">${displaySignal}${valueText}</span>
+        </div>`;
     }
     
-    function updateOdometers(buy, sell, total) {
-        const bp = total>0 ? (buy/total)*100 : 0;
-        const sp = total>0 ? (sell/total)*100 : 0;
-        const ns = buy - sell;
-        const np = total>0 ? ((ns+total)/(total*2))*100 : 50;
-        buyOdometer.innerText = Math.round(bp);
-        sellOdometer.innerText = Math.round(sp);
-        netScoreOdometer.innerText = ns;
-        buyFill.style.width = bp+'%';
-        sellFill.style.width = sp+'%';
-        netFill.style.width = np+'%';
-        buyCountOdo.innerText = buy;
-        sellCountOdo.innerText = sell;
-    }
-    
-    // ---- Gauge update with continuous label ----
-    function getSentimentFromPercent(bullishPercent) {
-        // Clock-wise mapping: left=strong sell, center=neutral, right=strong buy
-        if (bullishPercent <= 12) return { label: 'STRONG SELL', cls: 'strong-sell-text' };
-        if (bullishPercent <= 30) return { label: 'SELL', cls: 'sell-text' };
-        if (bullishPercent <= 45) return { label: 'MODERATE SELL', cls: 'sell-text' };
-        if (bullishPercent <= 55) return { label: 'NEUTRAL', cls: 'neutral-text' };
-        if (bullishPercent <= 70) return { label: 'MODERATE BUY', cls: 'buy-text' };
-        if (bullishPercent <= 88) return { label: 'BUY', cls: 'buy-text' };
-        return { label: 'STRONG BUY', cls: 'strong-buy-text' };
-    }
-    
-    function updateGauge(buy, sell, neutral, total, bullishPercent, summary) {
-        // Needle rotation: -90deg (0%) to +90deg (100%)
-        const angle = -90 + (bullishPercent / 100) * 180;
-        gaugeNeedle.style.transform = `rotate(${angle}deg)`;
+    // ---- Odometer update ----
+    function updateOdometers(buyCount, sellCount, total) {
+        const buyPercent = total > 0 ? (buyCount / total) * 100 : 0;
+        const sellPercent = total > 0 ? (sellCount / total) * 100 : 0;
+        const netScore = buyCount - sellCount;
+        const netPercent = total > 0 ? ((netScore + total) / (total * 2)) * 100 : 50;
         
-        // Active arc dashoffset
-        const arcLen = 314.16;
-        const progress = (angle + 90) / 180; // 0..1
-        gaugeActiveArc.setAttribute('stroke-dashoffset', arcLen * (1 - progress));
-        
-        // Label derived from the exact needle position
-        const sentiment = getSentimentFromPercent(bullishPercent);
-        gaugeSentimentText.textContent = sentiment.label;
-        gaugeSentimentText.className = 'sentiment-text ' + sentiment.cls;
-        
-        gaugeSellCount.textContent = sell;
-        gaugeNeutralCount.textContent = neutral;
-        gaugeBuyCount.textContent = buy;
-        gaugeSummaryText.innerHTML = summary;
+        buyOdometer.innerText = Math.round(buyPercent);
+        sellOdometer.innerText = Math.round(sellPercent);
+        netScoreOdometer.innerText = netScore;
+        buyFill.style.width = buyPercent + '%';
+        sellFill.style.width = sellPercent + '%';
+        netFill.style.width = netPercent + '%';
+        buyCountOdo.innerText = buyCount;
+        sellCountOdo.innerText = sellCount;
     }
     
     // ---- Main analysis ----
@@ -552,19 +529,18 @@
         
         loadingOverlay.classList.remove('hidden');
         searchBtn.disabled = true;
-        updateOdometers(0,0,0);
-        gaugeSentimentText.textContent = '...';
-        gaugeSentimentText.className = 'sentiment-text neutral-text';
-        gaugeNeedle.style.transform = 'rotate(0deg)';
-        gaugeActiveArc.setAttribute('stroke-dashoffset', '314.16');
+        updateOdometers(0, 0, 0);
+        finalRecEl.innerText = '—';
+        aiSummaryText.innerText = 'Analyzing...';
         
         try {
             const data = await fetchStockData(cleanName);
-            symbolTitle.innerHTML = `${cleanName} <span style="font-size:0.8rem; color:#8a8a8a;">₹${data.latest_price?.toFixed(2)||'—'}</span>`;
+            symbolTitle.innerHTML = `${cleanName} <span style="font-size:0.8rem; color:#94a3b8;">₹${data.latest_price?.toFixed(2) || '—'}</span>`;
+            
             updateChart(data.candles || []);
             
             const ind = data.indicators || {};
-            const superTrendVal = calculateSuperTrendValue(data.candles);
+            const superTrendValue = calculateSuperTrendValue(data.candles);
             
             trendIndicators.innerHTML = [
                 renderRow('EMA 20', ind.EMA20?.value, ind.EMA20?.signal),
@@ -574,11 +550,12 @@
                 renderRow('SMA 20', ind.SMA20?.value, ind.SMA20?.signal),
                 renderRow('SMA 50', ind.SMA50?.value, ind.SMA50?.signal),
                 renderRow('SMA 200', ind.SMA200?.value, ind.SMA200?.signal),
-                renderRow('SuperTrend (Lower)', superTrendVal, ind.SuperTrend?.signal),
+                renderRow('SuperTrend (Lower)', superTrendValue, ind.SuperTrend?.signal),
                 renderRow('Ichimoku', null, ind.Ichimoku?.signal),
                 renderRow('Parabolic SAR', null, ind.Parabolic_SAR?.signal),
                 renderRow('ADX (+DI/‑DI)', ind.ADX?.value, ind.ADX?.signal),
             ].join('');
+            
             momentumIndicators.innerHTML = [
                 renderRow('RSI (14)', ind.RSI?.value, ind.RSI?.signal),
                 renderRow('Stochastic RSI', ind.StochasticRSI?.value, ind.StochasticRSI?.signal),
@@ -591,115 +568,197 @@
                 renderRow('MFI', ind.MFI?.value, ind.MFI?.signal),
                 renderRow('Ultimate Osc', ind.Ultimate_Oscillator?.value, ind.Ultimate_Oscillator?.signal),
             ].join('');
+            
             volumeIndicators.innerHTML = [
                 renderRow('OBV', ind.OBV?.value, ind.OBV?.signal),
                 renderRow('CMF', ind.CMF?.value, ind.CMF?.signal),
                 renderRow('VWAP', ind.VWAP?.value, ind.VWAP?.signal),
             ].join('');
+            
             volatilityIndicators.innerHTML = [
                 renderRow('Bollinger Bands', null, ind.BollingerBands?.signal),
                 renderRow('ATR', ind.ATR?.value, null),
                 renderRow('Std Deviation', ind.StandardDeviation?.value, null),
             ].join('');
             
-            // Count signals
-            const keys = ['EMA20','EMA50','EMA100','EMA200','SMA20','SMA50','SMA200','SuperTrend','Ichimoku','Parabolic_SAR','RSI','StochasticRSI','MACD','CCI','Williams_R','ROC','Momentum','MFI','Ultimate_Oscillator','OBV','CMF','VWAP','BollingerBands'];
-            let buy=0, sell=0, neutral=0;
-            keys.forEach(k => {
-                const sig = ind[k]?.signal;
-                if (sig) {
-                    if (sig==='BUY'||sig==='STRONG_BUY') buy++;
-                    else if (sig==='SELL'||sig==='STRONG_SELL') sell++;
-                    else if (sig==='NEUTRAL') neutral++;
+            const signalKeys = [
+                'EMA20', 'EMA50', 'EMA100', 'EMA200',
+                'SMA20', 'SMA50', 'SMA200',
+                'SuperTrend', 'Ichimoku', 'Parabolic_SAR',
+                'RSI', 'StochasticRSI', 'MACD', 'CCI',
+                'Williams_R', 'ROC', 'Momentum', 'MFI',
+                'Ultimate_Oscillator', 'OBV', 'CMF', 'VWAP',
+                'BollingerBands'
+            ];
+            
+            let buy = 0, sell = 0, neutral = 0;
+            signalKeys.forEach(key => {
+                const signal = ind[key]?.signal;
+                if (signal) {
+                    if (signal === 'BUY' || signal === 'STRONG_BUY') buy++;
+                    else if (signal === 'SELL' || signal === 'STRONG_SELL') sell++;
+                    else if (signal === 'NEUTRAL') neutral++;
                 }
             });
-            const total = buy+sell+neutral;
-            const bullishPercent = total>0 ? (buy/total)*100 : 0;
+            const total = buy + sell + neutral;
             
+            buyCountEl.innerText = buy;
+            sellCountEl.innerText = sell;
+            neutralCountEl.innerText = neutral;
             updateOdometers(buy, sell, total);
             
-            // Build summary
-            let summary = `🔍 <b>${cleanName}</b>: ${total} indicators. `;
-            if (buy > sell) summary += `📈 ${buy} BUY vs ${sell} SELL. `;
-            else if (sell > buy) summary += `📉 ${sell} SELL vs ${buy} BUY. `;
-            else summary += `⚖️ Mixed signals. `;
-            if (ind.ADX?.value > 25) summary += `Strong trend (ADX: ${ind.ADX.value}).`;
-            else if (ind.ADX?.value < 20) summary += `Weak trend.`;
+            const bullishPercent = total > 0 ? (buy / total) * 100 : 0;
+            let finalRec = data.final_signal;
+            if (!finalRec) {
+                if (buy > sell + 2) finalRec = 'STRONG BUY';
+                else if (buy > sell) finalRec = 'BUY';
+                else if (sell > buy + 2) finalRec = 'STRONG SELL';
+                else if (sell > buy) finalRec = 'SELL';
+                else finalRec = 'NEUTRAL';
+            }
+            finalRecEl.innerText = finalRec;
+            finalRecEl.className = 'final-recommendation ' + getSignalClass(finalRec);
+            bullishPercentEl.innerText = Math.round(bullishPercent);
+            bullishMeterFill.style.width = bullishPercent + '%';
             
-            updateGauge(buy, sell, neutral, total, bullishPercent, summary);
+            let summary = `🔍 <b>${cleanName}</b>: Based on ${total} technical indicators, the verdict is <b>${finalRec}</b>. `;
+            if (buy > sell) {
+                summary += `📈 Bullish momentum with ${buy} BUY signals vs ${sell} SELL signals. `;
+                if (ind.RSI?.value < 40) summary += `RSI at ${ind.RSI.value} suggests upside potential. `;
+            } else if (sell > buy) {
+                summary += `📉 Bearish pressure with ${sell} SELL signals vs ${buy} BUY signals. `;
+                if (ind.RSI?.value > 60) summary += `RSI at ${ind.RSI.value} indicates overbought conditions. `;
+            } else {
+                summary += `⚖️ Mixed signals suggest consolidation or sideways movement. `;
+            }
+            if (ind.ADX?.value > 25) summary += `Strong trend detected (ADX: ${ind.ADX.value}). `;
+            else if (ind.ADX?.value < 20) summary += `Weak trend, range-bound market. `;
+            
+            aiSummaryText.innerHTML = summary;
+            
         } catch (err) {
             console.error(err);
             symbolTitle.innerHTML = 'Error';
-            gaugeSentimentText.textContent = 'ERROR';
-            gaugeSentimentText.className = 'sentiment-text sell-text';
-            gaugeSummaryText.innerHTML = `❌ ${err.message}`;
+            aiSummaryText.innerHTML = `❌ ${err.message}`;
+            finalRecEl.innerText = 'ERROR';
         } finally {
             loadingOverlay.classList.add('hidden');
             searchBtn.disabled = false;
         }
     }
     
-    // ---- Suggestions ----
-    function showSuggestions(val) {
-        if (!val || val.length<1) { suggestionsDropdown.classList.remove('show'); return; }
-        const upper = val.toUpperCase();
-        const filtered = allSymbols.filter(s => s.startsWith(upper)).slice(0,15);
-        if (!filtered.length) { suggestionsDropdown.classList.remove('show'); return; }
+    // ---- Suggestions with safe DOM rendering ----
+    function showSuggestions(inputValue) {
+        if (!inputValue || inputValue.length < 1) {
+            suggestionsDropdown.classList.remove('show');
+            return;
+        }
+        const upperInput = inputValue.toUpperCase();
+        const filtered = allSymbols.filter(s => s.startsWith(upperInput)).slice(0, 15);
+        if (filtered.length === 0) {
+            suggestionsDropdown.classList.remove('show');
+            return;
+        }
+        
         suggestionsDropdown.innerHTML = '';
         filtered.forEach(sym => {
             const item = document.createElement('div');
             item.className = 'suggestion-item';
-            item.setAttribute('role','option');
+            item.setAttribute('role', 'option');
             item.tabIndex = 0;
-            const idx = sym.indexOf(upper);
-            if (idx===0) {
+            const index = sym.indexOf(upperInput);
+            if (index === 0) {
                 const span = document.createElement('span');
                 span.className = 'suggestion-highlight';
-                span.textContent = sym.substring(0, upper.length);
+                span.textContent = sym.substring(0, upperInput.length);
                 item.appendChild(span);
-                item.appendChild(document.createTextNode(sym.substring(upper.length)));
-            } else item.textContent = sym;
-            item.addEventListener('click', ()=> selectSuggestion(sym));
+                item.appendChild(document.createTextNode(sym.substring(upperInput.length)));
+            } else {
+                item.textContent = sym;
+            }
+            item.addEventListener('click', () => selectSuggestion(sym));
             suggestionsDropdown.appendChild(item);
         });
+        
         suggestionsDropdown.classList.add('show');
     }
     
-    function selectSuggestion(sym) { stockInput.value = sym; suggestionsDropdown.classList.remove('show'); analyzeStock(sym); }
-    function hideSuggestions() { suggestionsDropdown.classList.remove('show'); }
+    function selectSuggestion(symbol) {
+        stockInput.value = symbol;
+        suggestionsDropdown.classList.remove('show');
+        analyzeStock(symbol);
+    }
     
-    stockInput.addEventListener('input', e => showSuggestions(e.target.value));
-    stockInput.addEventListener('keydown', e => {
-        if (e.key==='Escape') { hideSuggestions(); stockInput.blur(); }
-        else if (e.key==='Enter') { e.preventDefault(); hideSuggestions(); analyzeStock(stockInput.value.trim()); }
-        else if (e.key==='ArrowDown'||e.key==='ArrowUp') {
+    function hideSuggestions() {
+        suggestionsDropdown.classList.remove('show');
+    }
+    
+    // ---- Event listeners ----
+    stockInput.addEventListener('input', (e) => showSuggestions(e.target.value));
+    
+    stockInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            hideSuggestions();
+            stockInput.blur();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            hideSuggestions();
+            analyzeStock(stockInput.value.trim());
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
             const items = suggestionsDropdown.querySelectorAll('.suggestion-item');
-            if (!items.length) return;
+            if (items.length === 0) return;
             const active = suggestionsDropdown.querySelector('.suggestion-item.active');
-            let idx = -1;
-            if (active) { idx = Array.from(items).indexOf(active); active.classList.remove('active'); }
-            if (e.key==='ArrowDown') idx = (idx+1)%items.length;
-            else idx = (idx-1+items.length)%items.length;
-            items[idx].classList.add('active');
-            items[idx].scrollIntoView({ block:'nearest' });
+            let index = -1;
+            if (active) {
+                index = Array.from(items).indexOf(active);
+                active.classList.remove('active');
+            }
+            if (e.key === 'ArrowDown') {
+                index = (index + 1) % items.length;
+            } else {
+                index = (index - 1 + items.length) % items.length;
+            }
+            items[index].classList.add('active');
+            items[index].scrollIntoView({ block: 'nearest' });
         }
     });
-    searchBtn.addEventListener('click', ()=> { hideSuggestions(); analyzeStock(stockInput.value.trim()); });
-    document.addEventListener('click', e => { if (!e.target.closest('.search-wrapper')) hideSuggestions(); });
-    document.addEventListener('keydown', e => { if (e.key==='Escape') hideSuggestions(); });
     
-    // ---- Init ----
+    searchBtn.addEventListener('click', () => {
+        hideSuggestions();
+        analyzeStock(stockInput.value.trim());
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-wrapper')) hideSuggestions();
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideSuggestions();
+    });
+    
+    // ---- Initialization ----
     async function init() {
         loadingOverlay.classList.add('hidden');
         createChart();
         try {
             allSymbols = await loadAllSymbols();
-            const def = allSymbols.includes('RELIANCE') ? 'RELIANCE' : (allSymbols[0]||'');
-            if (def) { stockInput.value = def; analyzeStock(def); }
-            else { gaugeSummaryText.innerText = 'Enter a symbol to begin.'; symbolTitle.innerText = 'Ready'; }
-        } catch (err) { gaugeSummaryText.innerText = 'Failed to load symbol list.'; }
+            console.log(`Loaded ${allSymbols.length} symbols`);
+            
+            // Set default stock explicitly to RELIANCE
+            const defaultSymbol = allSymbols.includes('RELIANCE') ? 'RELIANCE' : allSymbols[0] || '';
+            if (defaultSymbol) {
+                stockInput.value = defaultSymbol;
+                analyzeStock(defaultSymbol);
+            } else {
+                aiSummaryText.innerText = 'Enter a symbol to begin.';
+                symbolTitle.innerText = 'Ready';
+            }
+        } catch (err) {
+            aiSummaryText.innerText = 'Failed to load symbol list. Please refresh.';
+        }
     }
+    
     init();
 })();
 </script>
