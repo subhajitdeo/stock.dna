@@ -316,17 +316,13 @@
                             <stop offset="100%" stop-color="#00d26a" />
                         </linearGradient>
                     </defs>
-                    <!-- Inactive arc (full semicircle) -->
                     <path d="M 50 120 A 100 100 0 0 1 250 120" fill="none" stroke="#2a2a2a" stroke-width="20" stroke-linecap="round" />
-                    <!-- Active arc (dasharray controlled by JS) -->
                     <path id="gaugeActiveArc" d="M 50 120 A 100 100 0 0 1 250 120" fill="none" stroke="url(#gaugeGradient)" stroke-width="20" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" />
-                    <!-- Labels -->
                     <text x="40" y="145" text-anchor="middle" font-size="10" fill="#8a8a8a">STRONG SELL</text>
                     <text x="80" y="155" text-anchor="middle" font-size="10" fill="#8a8a8a">SELL</text>
                     <text x="150" y="165" text-anchor="middle" font-size="12" fill="#ffffff">NEUTRAL</text>
                     <text x="220" y="155" text-anchor="middle" font-size="10" fill="#8a8a8a">BUY</text>
                     <text x="260" y="145" text-anchor="middle" font-size="10" fill="#8a8a8a">STRONG BUY</text>
-                    <!-- Needle group -->
                     <g id="gaugeNeedle" class="gauge-needle" style="transform: rotate(0deg);">
                         <line x1="150" y1="130" x2="150" y2="40" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
                         <circle cx="150" cy="130" r="5" fill="#ffffff" />
@@ -395,57 +391,40 @@
     
     const isMobile = () => window.innerWidth < 768;
     
-    // ---- Load symbols from CSV ----
+    // ---- Load symbols ----
     async function loadAllSymbols() {
         const paths = ['stock.dna/nifty500.csv', '/stock.dna/nifty500.csv'];
         let csvText = null;
         for (const path of paths) {
             try {
                 const response = await fetch(path);
-                if (response.ok) {
-                    csvText = await response.text();
-                    break;
-                }
-            } catch (e) { /* next */ }
+                if (response.ok) { csvText = await response.text(); break; }
+            } catch (e) {}
         }
         if (!csvText) {
-            console.warn('Using fallback symbol list');
             return ['RELIANCE', 'TCS', 'INFY', 'WIPRO', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'LT', 'HINDUNILVR', 'AXISBANK', 'KOTAKBANK'];
         }
-        const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0 && /^[A-Z]+$/.test(line));
-        return lines;
+        return csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0 && /^[A-Z]+$/.test(l));
     }
     
-    // ---- Chart setup (restored premium colours) ----
+    // ---- Chart (premium dark) ----
     function createChart() {
         if (chart) return;
         const container = chartContainer;
         container.innerHTML = '';
         const height = isMobile() ? 350 : 450;
-        
         chart = LightweightCharts.createChart(container, {
-            layout: {
-                background: { color: '#0a1020' },  // original premium dark-blue
-                textColor: '#cbd5e6',
-                fontSize: isMobile() ? 10 : 12
-            },
-            grid: {
-                vertLines: { color: '#1e293b' },
-                horzLines: { color: '#1e293b' }
-            },
+            layout: { background: { color: '#0a1020' }, textColor: '#cbd5e6', fontSize: isMobile() ? 10 : 12 },
+            grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
             crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-            rightPriceScale: {
-                borderColor: '#2d3a5e',
-                scaleMargins: { top: 0.1, bottom: 0.2 }
-            },
+            rightPriceScale: { borderColor: '#2d3a5e', scaleMargins: { top: 0.1, bottom: 0.2 } },
             timeScale: {
                 borderColor: '#2d3a5e',
                 timeVisible: true,
                 secondsVisible: false,
                 tickMarkFormatter: (time) => {
-                    const date = new Date(time * 1000);
-                    if (isNaN(date.getTime())) return '';
-                    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                    const d = new Date(time * 1000);
+                    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
                 },
                 barSpacing: isMobile() ? 6 : 8,
                 minBarSpacing: 4,
@@ -453,171 +432,115 @@
             width: container.clientWidth,
             height: height
         });
-        
-        candleSeries = chart.addCandlestickSeries({
-            upColor: '#26a69a',
-            downColor: '#ef5350',
-            borderVisible: false,
-        });
-        
-        volumeSeries = chart.addHistogramSeries({
-            color: '#26a69a70',
-            priceFormat: { type: 'volume' },
-            priceScaleId: 'volume',
-        });
-        
-        chart.priceScale('volume').applyOptions({
-            scaleMargins: { top: 0.8, bottom: 0 },
-            visible: false,
-        });
+        candleSeries = chart.addCandlestickSeries({ upColor: '#26a69a', downColor: '#ef5350', borderVisible: false });
+        volumeSeries = chart.addHistogramSeries({ color: '#26a69a70', priceFormat: { type: 'volume' }, priceScaleId: 'volume' });
+        chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 }, visible: false });
     }
     
     function updateChart(candles) {
         if (!chart) createChart();
-        const formattedCandles = candles.map(c => {
-            let time = c.time;
-            if (typeof time === 'string') {
-                time = Math.floor(new Date(time).getTime() / 1000);
-            } else if (typeof time === 'number') {
-                if (time > 1e12) time = Math.floor(time / 1000);
-            }
-            return {
-                time: time,
-                open: c.open,
-                high: c.high,
-                low: c.low,
-                close: c.close,
-                volume: c.volume || 0
-            };
-        }).sort((a, b) => a.time - b.time);
+        const formatted = candles.map(c => {
+            let t = c.time;
+            if (typeof t === 'string') t = Math.floor(new Date(t).getTime() / 1000);
+            else if (typeof t === 'number' && t > 1e12) t = Math.floor(t / 1000);
+            return { time: t, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume || 0 };
+        }).sort((a,b) => a.time - b.time);
         
-        candleSeries.setData(formattedCandles);
-        volumeSeries.setData(formattedCandles.map(c => ({
-            time: c.time,
-            value: c.volume || 0,
-            color: c.close > c.open ? '#26a69a70' : '#ef535070'
-        })));
-        
+        candleSeries.setData(formatted);
+        volumeSeries.setData(formatted.map(c => ({ time: c.time, value: c.volume, color: c.close > c.open ? '#26a69a70' : '#ef535070' })));
         chart.timeScale().fitContent();
-        if (formattedCandles.length > 180) {
-            const lastTime = formattedCandles[formattedCandles.length - 1].time;
-            const endDate = new Date(lastTime * 1000);
-            const startDate = new Date(endDate);
-            startDate.setMonth(startDate.getMonth() - 6);
-            const from = Math.floor(startDate.getTime() / 1000);
-            chart.timeScale().setVisibleRange({ from, to: lastTime });
+        if (formatted.length > 180) {
+            const last = formatted[formatted.length-1].time;
+            const start = new Date(last * 1000);
+            start.setMonth(start.getMonth() - 6);
+            chart.timeScale().setVisibleRange({ from: Math.floor(start.getTime()/1000), to: last });
         }
     }
     
-    function handleResize() {
+    window.addEventListener('resize', () => {
         if (!chart) return;
-        chart.applyOptions({
-            width: chartContainer.clientWidth,
-            height: isMobile() ? 350 : 450,
-            layout: { fontSize: isMobile() ? 10 : 12 },
-            timeScale: { barSpacing: isMobile() ? 6 : 8 }
-        });
-    }
-    window.addEventListener('resize', handleResize);
+        chart.applyOptions({ width: chartContainer.clientWidth, height: isMobile() ? 350 : 450, layout: { fontSize: isMobile() ? 10 : 12 }, timeScale: { barSpacing: isMobile() ? 6 : 8 } });
+    });
     
-    // ---- Data fetching ----
+    // ---- Data ----
     async function fetchStockData(symbol) {
-        const cleanSymbol = symbol.toUpperCase().replace(/\.NS$/i, '');
-        const paths = [
-            `stock.dna/data/processed/${cleanSymbol}.json`,
-            `/stock.dna/data/processed/${cleanSymbol}.json`
-        ];
-        let data = null;
-        for (const path of paths) {
-            try {
-                const res = await fetch(path);
-                if (res.ok) {
-                    data = await res.json();
-                    break;
-                }
-            } catch (e) { /* next */ }
+        const clean = symbol.toUpperCase().replace(/\.NS$/i, '');
+        const paths = [`stock.dna/data/processed/${clean}.json`, `/stock.dna/data/processed/${clean}.json`];
+        for (const p of paths) {
+            try { const r = await fetch(p); if (r.ok) return await r.json(); } catch (e) {}
         }
-        if (!data) throw new Error(`No data found for ${cleanSymbol}. Ensure it's a NIFTY 500 stock.`);
-        return data;
+        throw new Error(`No data found for ${clean}. Ensure it's a NIFTY 500 stock.`);
     }
     
     // ---- Helpers ----
     function calculateSuperTrendValue(candles, period = 10, multiplier = 3) {
         if (!candles || candles.length < period) return null;
-        const closes = candles.map(c => c.close);
-        const highs = candles.map(c => c.high);
-        const lows = candles.map(c => c.low);
+        const c = candles, cl = c.map(x => x.close), h = c.map(x => x.high), l = c.map(x => x.low);
         const tr = [];
-        for (let i = 1; i < highs.length; i++) {
-            tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1])));
-        }
-        const atr = tr.slice(-period).reduce((a,b) => a + b, 0) / period;
-        const hl2 = (highs[highs.length-1] + lows[lows.length-1]) / 2;
-        return (hl2 - multiplier * atr).toFixed(2);
+        for (let i=1; i<h.length; i++) tr.push(Math.max(h[i]-l[i], Math.abs(h[i]-cl[i-1]), Math.abs(l[i]-cl[i-1])));
+        const atr = tr.slice(-period).reduce((a,b)=>a+b,0)/period;
+        return ((h[h.length-1]+l[l.length-1])/2 - multiplier*atr).toFixed(2);
     }
     
-    function getSignalClass(signal) {
-        const s = (signal || 'NEUTRAL').toUpperCase();
-        if (s === 'BUY') return 'buy';
-        if (s === 'SELL') return 'sell';
-        if (s === 'STRONG_BUY') return 'strong-buy';
-        if (s === 'STRONG_SELL') return 'strong-sell';
+    function getSignalClass(s) {
+        const sig = (s||'NEUTRAL').toUpperCase();
+        if (sig === 'BUY') return 'buy';
+        if (sig === 'SELL') return 'sell';
+        if (sig === 'STRONG_BUY') return 'strong-buy';
+        if (sig === 'STRONG_SELL') return 'strong-sell';
         return 'neutral';
     }
     
-    function renderRow(name, value, signal) {
-        const sigClass = getSignalClass(signal);
-        const valueText = (value !== undefined && value !== null) ? ` ${value}` : '';
-        const displaySignal = signal || 'NEUTRAL';
-        return `<div class="indicator-row">
-            <span class="indicator-name">${name}</span>
-            <span class="signal-badge ${sigClass}">${displaySignal}${valueText}</span>
-        </div>`;
+    function renderRow(name, val, signal) {
+        return `<div class="indicator-row"><span class="indicator-name">${name}</span><span class="signal-badge ${getSignalClass(signal)}">${signal||'NEUTRAL'}${val!=null?' '+val:''}</span></div>`;
     }
     
-    function updateOdometers(buyCount, sellCount, total) {
-        const buyPercent = total > 0 ? (buyCount / total) * 100 : 0;
-        const sellPercent = total > 0 ? (sellCount / total) * 100 : 0;
-        const netScore = buyCount - sellCount;
-        const netPercent = total > 0 ? ((netScore + total) / (total * 2)) * 100 : 50;
-        buyOdometer.innerText = Math.round(buyPercent);
-        sellOdometer.innerText = Math.round(sellPercent);
-        netScoreOdometer.innerText = netScore;
-        buyFill.style.width = buyPercent + '%';
-        sellFill.style.width = sellPercent + '%';
-        netFill.style.width = netPercent + '%';
-        buyCountOdo.innerText = buyCount;
-        sellCountOdo.innerText = sellCount;
+    function updateOdometers(buy, sell, total) {
+        const bp = total>0 ? (buy/total)*100 : 0;
+        const sp = total>0 ? (sell/total)*100 : 0;
+        const ns = buy - sell;
+        const np = total>0 ? ((ns+total)/(total*2))*100 : 50;
+        buyOdometer.innerText = Math.round(bp);
+        sellOdometer.innerText = Math.round(sp);
+        netScoreOdometer.innerText = ns;
+        buyFill.style.width = bp+'%';
+        sellFill.style.width = sp+'%';
+        netFill.style.width = np+'%';
+        buyCountOdo.innerText = buy;
+        sellCountOdo.innerText = sell;
     }
     
-    // ---- Gauge update (now purely based on computed signals) ----
-    function updateGauge(buyCount, sellCount, neutralCount, total, finalRec, bullishPercent, summaryText) {
-        // Needle angle: 0% bullish = -90deg (left, strong sell), 100% bullish = +90deg (right, strong buy)
-        const angle = -90 + (bullishPercent / 100) * 180;  // -90 to +90
+    // ---- Gauge update with continuous label ----
+    function getSentimentFromPercent(bullishPercent) {
+        // Clock-wise mapping: left=strong sell, center=neutral, right=strong buy
+        if (bullishPercent <= 12) return { label: 'STRONG SELL', cls: 'strong-sell-text' };
+        if (bullishPercent <= 30) return { label: 'SELL', cls: 'sell-text' };
+        if (bullishPercent <= 45) return { label: 'MODERATE SELL', cls: 'sell-text' };
+        if (bullishPercent <= 55) return { label: 'NEUTRAL', cls: 'neutral-text' };
+        if (bullishPercent <= 70) return { label: 'MODERATE BUY', cls: 'buy-text' };
+        if (bullishPercent <= 88) return { label: 'BUY', cls: 'buy-text' };
+        return { label: 'STRONG BUY', cls: 'strong-buy-text' };
+    }
+    
+    function updateGauge(buy, sell, neutral, total, bullishPercent, summary) {
+        // Needle rotation: -90deg (0%) to +90deg (100%)
+        const angle = -90 + (bullishPercent / 100) * 180;
         gaugeNeedle.style.transform = `rotate(${angle}deg)`;
         
-        // Active arc dashoffset (length = 314.16)
-        const totalLen = 314.16;
-        const progress = (angle + 90) / 180; // 0 (strong sell) to 1 (strong buy)
-        const offset = totalLen * (1 - progress);
-        gaugeActiveArc.setAttribute('stroke-dashoffset', offset);
+        // Active arc dashoffset
+        const arcLen = 314.16;
+        const progress = (angle + 90) / 180; // 0..1
+        gaugeActiveArc.setAttribute('stroke-dashoffset', arcLen * (1 - progress));
         
-        // Sentiment text styling
-        let textClass = '';
-        switch (finalRec) {
-            case 'STRONG BUY': textClass = 'strong-buy-text'; break;
-            case 'BUY': textClass = 'buy-text'; break;
-            case 'STRONG SELL': textClass = 'strong-sell-text'; break;
-            case 'SELL': textClass = 'sell-text'; break;
-            default: textClass = 'neutral-text';
-        }
-        gaugeSentimentText.textContent = finalRec;
-        gaugeSentimentText.className = 'sentiment-text ' + textClass;
+        // Label derived from the exact needle position
+        const sentiment = getSentimentFromPercent(bullishPercent);
+        gaugeSentimentText.textContent = sentiment.label;
+        gaugeSentimentText.className = 'sentiment-text ' + sentiment.cls;
         
-        gaugeSellCount.textContent = sellCount;
-        gaugeNeutralCount.textContent = neutralCount;
-        gaugeBuyCount.textContent = buyCount;
-        gaugeSummaryText.innerHTML = summaryText;
+        gaugeSellCount.textContent = sell;
+        gaugeNeutralCount.textContent = neutral;
+        gaugeBuyCount.textContent = buy;
+        gaugeSummaryText.innerHTML = summary;
     }
     
     // ---- Main analysis ----
@@ -629,8 +552,7 @@
         
         loadingOverlay.classList.remove('hidden');
         searchBtn.disabled = true;
-        updateOdometers(0, 0, 0);
-        // Reset gauge to neutral
+        updateOdometers(0,0,0);
         gaugeSentimentText.textContent = '...';
         gaugeSentimentText.className = 'sentiment-text neutral-text';
         gaugeNeedle.style.transform = 'rotate(0deg)';
@@ -638,11 +560,11 @@
         
         try {
             const data = await fetchStockData(cleanName);
-            symbolTitle.innerHTML = `${cleanName} <span style="font-size:0.8rem; color:#8a8a8a;">₹${data.latest_price?.toFixed(2) || '—'}</span>`;
+            symbolTitle.innerHTML = `${cleanName} <span style="font-size:0.8rem; color:#8a8a8a;">₹${data.latest_price?.toFixed(2)||'—'}</span>`;
             updateChart(data.candles || []);
             
             const ind = data.indicators || {};
-            const superTrendValue = calculateSuperTrendValue(data.candles);
+            const superTrendVal = calculateSuperTrendValue(data.candles);
             
             trendIndicators.innerHTML = [
                 renderRow('EMA 20', ind.EMA20?.value, ind.EMA20?.signal),
@@ -652,12 +574,11 @@
                 renderRow('SMA 20', ind.SMA20?.value, ind.SMA20?.signal),
                 renderRow('SMA 50', ind.SMA50?.value, ind.SMA50?.signal),
                 renderRow('SMA 200', ind.SMA200?.value, ind.SMA200?.signal),
-                renderRow('SuperTrend (Lower)', superTrendValue, ind.SuperTrend?.signal),
+                renderRow('SuperTrend (Lower)', superTrendVal, ind.SuperTrend?.signal),
                 renderRow('Ichimoku', null, ind.Ichimoku?.signal),
                 renderRow('Parabolic SAR', null, ind.Parabolic_SAR?.signal),
                 renderRow('ADX (+DI/‑DI)', ind.ADX?.value, ind.ADX?.signal),
             ].join('');
-            
             momentumIndicators.innerHTML = [
                 renderRow('RSI (14)', ind.RSI?.value, ind.RSI?.signal),
                 renderRow('Stochastic RSI', ind.StochasticRSI?.value, ind.StochasticRSI?.signal),
@@ -670,60 +591,42 @@
                 renderRow('MFI', ind.MFI?.value, ind.MFI?.signal),
                 renderRow('Ultimate Osc', ind.Ultimate_Oscillator?.value, ind.Ultimate_Oscillator?.signal),
             ].join('');
-            
             volumeIndicators.innerHTML = [
                 renderRow('OBV', ind.OBV?.value, ind.OBV?.signal),
                 renderRow('CMF', ind.CMF?.value, ind.CMF?.signal),
                 renderRow('VWAP', ind.VWAP?.value, ind.VWAP?.signal),
             ].join('');
-            
             volatilityIndicators.innerHTML = [
                 renderRow('Bollinger Bands', null, ind.BollingerBands?.signal),
                 renderRow('ATR', ind.ATR?.value, null),
                 renderRow('Std Deviation', ind.StandardDeviation?.value, null),
             ].join('');
             
-            // Count live signals (ignore data.final_signal)
-            const signalKeys = [
-                'EMA20', 'EMA50', 'EMA100', 'EMA200',
-                'SMA20', 'SMA50', 'SMA200',
-                'SuperTrend', 'Ichimoku', 'Parabolic_SAR',
-                'RSI', 'StochasticRSI', 'MACD', 'CCI',
-                'Williams_R', 'ROC', 'Momentum', 'MFI',
-                'Ultimate_Oscillator', 'OBV', 'CMF', 'VWAP',
-                'BollingerBands'
-            ];
-            
-            let buy = 0, sell = 0, neutral = 0;
-            signalKeys.forEach(key => {
-                const signal = ind[key]?.signal;
-                if (signal) {
-                    if (signal === 'BUY' || signal === 'STRONG_BUY') buy++;
-                    else if (signal === 'SELL' || signal === 'STRONG_SELL') sell++;
-                    else if (signal === 'NEUTRAL') neutral++;
+            // Count signals
+            const keys = ['EMA20','EMA50','EMA100','EMA200','SMA20','SMA50','SMA200','SuperTrend','Ichimoku','Parabolic_SAR','RSI','StochasticRSI','MACD','CCI','Williams_R','ROC','Momentum','MFI','Ultimate_Oscillator','OBV','CMF','VWAP','BollingerBands'];
+            let buy=0, sell=0, neutral=0;
+            keys.forEach(k => {
+                const sig = ind[k]?.signal;
+                if (sig) {
+                    if (sig==='BUY'||sig==='STRONG_BUY') buy++;
+                    else if (sig==='SELL'||sig==='STRONG_SELL') sell++;
+                    else if (sig==='NEUTRAL') neutral++;
                 }
             });
-            const total = buy + sell + neutral;
-            const bullishPercent = total > 0 ? (buy / total) * 100 : 0;
-            
-            // Compute verdict purely from indicator counts
-            let finalRec = 'NEUTRAL';
-            if (buy > sell + 2) finalRec = 'STRONG BUY';
-            else if (buy > sell) finalRec = 'BUY';
-            else if (sell > buy + 2) finalRec = 'STRONG SELL';
-            else if (sell > buy) finalRec = 'SELL';
+            const total = buy+sell+neutral;
+            const bullishPercent = total>0 ? (buy/total)*100 : 0;
             
             updateOdometers(buy, sell, total);
             
-            let summary = `🔍 <b>${cleanName}</b>: ${total} indicators – verdict <b>${finalRec}</b>. `;
+            // Build summary
+            let summary = `🔍 <b>${cleanName}</b>: ${total} indicators. `;
             if (buy > sell) summary += `📈 ${buy} BUY vs ${sell} SELL. `;
             else if (sell > buy) summary += `📉 ${sell} SELL vs ${buy} BUY. `;
             else summary += `⚖️ Mixed signals. `;
             if (ind.ADX?.value > 25) summary += `Strong trend (ADX: ${ind.ADX.value}).`;
             else if (ind.ADX?.value < 20) summary += `Weak trend.`;
             
-            updateGauge(buy, sell, neutral, total, finalRec, bullishPercent, summary);
-            
+            updateGauge(buy, sell, neutral, total, bullishPercent, summary);
         } catch (err) {
             console.error(err);
             symbolTitle.innerHTML = 'Error';
@@ -737,70 +640,54 @@
     }
     
     // ---- Suggestions ----
-    function showSuggestions(inputValue) {
-        if (!inputValue || inputValue.length < 1) {
-            suggestionsDropdown.classList.remove('show');
-            return;
-        }
-        const upperInput = inputValue.toUpperCase();
-        const filtered = allSymbols.filter(s => s.startsWith(upperInput)).slice(0, 15);
-        if (filtered.length === 0) {
-            suggestionsDropdown.classList.remove('show');
-            return;
-        }
+    function showSuggestions(val) {
+        if (!val || val.length<1) { suggestionsDropdown.classList.remove('show'); return; }
+        const upper = val.toUpperCase();
+        const filtered = allSymbols.filter(s => s.startsWith(upper)).slice(0,15);
+        if (!filtered.length) { suggestionsDropdown.classList.remove('show'); return; }
         suggestionsDropdown.innerHTML = '';
         filtered.forEach(sym => {
             const item = document.createElement('div');
             item.className = 'suggestion-item';
-            item.setAttribute('role', 'option');
+            item.setAttribute('role','option');
             item.tabIndex = 0;
-            const index = sym.indexOf(upperInput);
-            if (index === 0) {
+            const idx = sym.indexOf(upper);
+            if (idx===0) {
                 const span = document.createElement('span');
                 span.className = 'suggestion-highlight';
-                span.textContent = sym.substring(0, upperInput.length);
+                span.textContent = sym.substring(0, upper.length);
                 item.appendChild(span);
-                item.appendChild(document.createTextNode(sym.substring(upperInput.length)));
-            } else {
-                item.textContent = sym;
-            }
-            item.addEventListener('click', () => selectSuggestion(sym));
+                item.appendChild(document.createTextNode(sym.substring(upper.length)));
+            } else item.textContent = sym;
+            item.addEventListener('click', ()=> selectSuggestion(sym));
             suggestionsDropdown.appendChild(item);
         });
         suggestionsDropdown.classList.add('show');
     }
     
-    function selectSuggestion(symbol) {
-        stockInput.value = symbol;
-        suggestionsDropdown.classList.remove('show');
-        analyzeStock(symbol);
-    }
+    function selectSuggestion(sym) { stockInput.value = sym; suggestionsDropdown.classList.remove('show'); analyzeStock(sym); }
+    function hideSuggestions() { suggestionsDropdown.classList.remove('show'); }
     
-    function hideSuggestions() {
-        suggestionsDropdown.classList.remove('show');
-    }
-    
-    stockInput.addEventListener('input', (e) => showSuggestions(e.target.value));
-    stockInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { hideSuggestions(); stockInput.blur(); }
-        else if (e.key === 'Enter') { e.preventDefault(); hideSuggestions(); analyzeStock(stockInput.value.trim()); }
-        else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    stockInput.addEventListener('input', e => showSuggestions(e.target.value));
+    stockInput.addEventListener('keydown', e => {
+        if (e.key==='Escape') { hideSuggestions(); stockInput.blur(); }
+        else if (e.key==='Enter') { e.preventDefault(); hideSuggestions(); analyzeStock(stockInput.value.trim()); }
+        else if (e.key==='ArrowDown'||e.key==='ArrowUp') {
             e.preventDefault();
             const items = suggestionsDropdown.querySelectorAll('.suggestion-item');
-            if (items.length === 0) return;
+            if (!items.length) return;
             const active = suggestionsDropdown.querySelector('.suggestion-item.active');
-            let index = -1;
-            if (active) { index = Array.from(items).indexOf(active); active.classList.remove('active'); }
-            if (e.key === 'ArrowDown') index = (index + 1) % items.length;
-            else index = (index - 1 + items.length) % items.length;
-            items[index].classList.add('active');
-            items[index].scrollIntoView({ block: 'nearest' });
+            let idx = -1;
+            if (active) { idx = Array.from(items).indexOf(active); active.classList.remove('active'); }
+            if (e.key==='ArrowDown') idx = (idx+1)%items.length;
+            else idx = (idx-1+items.length)%items.length;
+            items[idx].classList.add('active');
+            items[idx].scrollIntoView({ block:'nearest' });
         }
     });
-    
-    searchBtn.addEventListener('click', () => { hideSuggestions(); analyzeStock(stockInput.value.trim()); });
-    document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrapper')) hideSuggestions(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideSuggestions(); });
+    searchBtn.addEventListener('click', ()=> { hideSuggestions(); analyzeStock(stockInput.value.trim()); });
+    document.addEventListener('click', e => { if (!e.target.closest('.search-wrapper')) hideSuggestions(); });
+    document.addEventListener('keydown', e => { if (e.key==='Escape') hideSuggestions(); });
     
     // ---- Init ----
     async function init() {
@@ -808,17 +695,10 @@
         createChart();
         try {
             allSymbols = await loadAllSymbols();
-            const defaultSymbol = allSymbols.includes('RELIANCE') ? 'RELIANCE' : allSymbols[0] || '';
-            if (defaultSymbol) {
-                stockInput.value = defaultSymbol;
-                analyzeStock(defaultSymbol);
-            } else {
-                gaugeSummaryText.innerText = 'Enter a symbol to begin.';
-                symbolTitle.innerText = 'Ready';
-            }
-        } catch (err) {
-            gaugeSummaryText.innerText = 'Failed to load symbol list. Please refresh.';
-        }
+            const def = allSymbols.includes('RELIANCE') ? 'RELIANCE' : (allSymbols[0]||'');
+            if (def) { stockInput.value = def; analyzeStock(def); }
+            else { gaugeSummaryText.innerText = 'Enter a symbol to begin.'; symbolTitle.innerText = 'Ready'; }
+        } catch (err) { gaugeSummaryText.innerText = 'Failed to load symbol list.'; }
     }
     init();
 })();
