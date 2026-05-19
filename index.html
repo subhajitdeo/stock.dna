@@ -305,17 +305,12 @@
     let chart = null;
     let candleSeries = null;
     let volumeSeries = null;
-    let searchTimeout = null;
     let currentSymbol = null;
     
     const isMobile = () => window.innerWidth < 768;
     
-    // ---- Utility: check if running from file:// (for path adjustment) ----
-    const isFileProtocol = window.location.protocol === 'file:';
-    
     // ---- Load symbols from CSV ----
     async function loadAllSymbols() {
-        // Try relative path first, fallback to root-relative
         const paths = ['stock.dna/nifty500.csv', '/stock.dna/nifty500.csv'];
         let csvText = null;
         for (const path of paths) {
@@ -329,21 +324,20 @@
         }
         
         if (!csvText) {
-            // Hardcoded fallback
             console.warn('Using fallback symbol list');
             return ['RELIANCE', 'TCS', 'INFY', 'WIPRO', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'LT', 'HINDUNILVR', 'AXISBANK', 'KOTAKBANK'];
         }
         
         const lines = csvText.split('\n')
             .map(line => line.trim())
-            .filter(line => line.length > 0 && /^[A-Z]+$/.test(line)); // only uppercase letters, skip headers
+            .filter(line => line.length > 0 && /^[A-Z]+$/.test(line));
         
         return lines;
     }
     
-    // ---- Chart initialization (done once) ----
+    // ---- Chart creation ----
     function createChart() {
-        if (chart) return; // already created
+        if (chart) return;
         const container = chartContainer;
         container.innerHTML = '';
         const height = isMobile() ? 350 : 450;
@@ -361,14 +355,16 @@
             crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
             rightPriceScale: {
                 borderColor: '#2d3a5e',
-                scaleMargins: { top: 0.1, bottom: 0.2 } // make room for volume
+                scaleMargins: { top: 0.1, bottom: 0.2 }
             },
             timeScale: {
                 borderColor: '#2d3a5e',
                 timeVisible: true,
                 secondsVisible: false,
+                // FIXED: Formatter now receives Unix timestamp (seconds) and displays correctly
                 tickMarkFormatter: (time) => {
-                    const date = new Date(time.year, time.month - 1, time.day);
+                    const date = new Date(time * 1000);
+                    if (isNaN(date.getTime())) return '';
                     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
                 },
                 barSpacing: isMobile() ? 6 : 8,
@@ -387,7 +383,7 @@
         volumeSeries = chart.addHistogramSeries({
             color: '#26a69a70',
             priceFormat: { type: 'volume' },
-            priceScaleId: 'volume', // separate scale
+            priceScaleId: 'volume',
         });
         
         chart.priceScale('volume').applyOptions({
@@ -396,15 +392,18 @@
         });
     }
     
+    // ---- Update chart with new data ----
     function updateChart(candles) {
         if (!chart) createChart();
         
-        // Convert time if necessary (Lightweight Charts accepts 'yyyy-mm-dd' or Unix timestamp)
+        // Convert all time entries to Unix timestamps (seconds)
         const formattedCandles = candles.map(c => {
             let time = c.time;
-            if (typeof time === 'number') {
-                // Convert Unix seconds to yyyy-mm-dd if it's a number
-                time = new Date(time * 1000).toISOString().split('T')[0];
+            if (typeof time === 'string') {
+                time = Math.floor(new Date(time).getTime() / 1000);
+            } else if (typeof time === 'number') {
+                // If already a number, assume milliseconds if > 1e12
+                if (time > 1e12) time = Math.floor(time / 1000);
             }
             return {
                 time: time,
@@ -414,7 +413,7 @@
                 close: c.close,
                 volume: c.volume || 0
             };
-        }).sort((a, b) => new Date(a.time) - new Date(b.time));
+        }).sort((a, b) => a.time - b.time);
         
         candleSeries.setData(formattedCandles);
         volumeSeries.setData(formattedCandles.map(c => ({
@@ -423,33 +422,32 @@
             color: c.close > c.open ? '#26a69a70' : '#ef535070'
         })));
         
-        // Fit all data, then scroll to last 6 months if data > 180 days
         chart.timeScale().fitContent();
-        const lastTime = formattedCandles[formattedCandles.length - 1]?.time;
-        if (lastTime && formattedCandles.length > 180) {
-            const endDate = new Date(lastTime);
+        
+        // Show last 6 months if data is long
+        if (formattedCandles.length > 180) {
+            const lastTime = formattedCandles[formattedCandles.length - 1].time;
+            const endDate = new Date(lastTime * 1000);
             const startDate = new Date(endDate);
             startDate.setMonth(startDate.getMonth() - 6);
-            const fromStr = startDate.toISOString().split('T')[0];
-            chart.timeScale().setVisibleRange({ from: fromStr, to: lastTime });
+            const from = Math.floor(startDate.getTime() / 1000);
+            chart.timeScale().setVisibleRange({ from, to: lastTime });
         }
     }
     
-    // Responsive resize handler
+    // ---- Responsive resize ----
     function handleResize() {
         if (!chart) return;
-        const container = chartContainer;
         chart.applyOptions({
-            width: container.clientWidth,
+            width: chartContainer.clientWidth,
             height: isMobile() ? 350 : 450,
             layout: { fontSize: isMobile() ? 10 : 12 },
             timeScale: { barSpacing: isMobile() ? 6 : 8 }
         });
     }
-    
     window.addEventListener('resize', handleResize);
     
-    // ---- Fetch stock data ----
+    // ---- Fetch data ----
     async function fetchStockData(symbol) {
         const cleanSymbol = symbol.toUpperCase().replace(/\.NS$/i, '');
         const paths = [
@@ -470,7 +468,7 @@
         return data;
     }
     
-    // ---- Helper: SuperTrend value ----
+    // ---- Helper: SuperTrend ----
     function calculateSuperTrendValue(candles, period = 10, multiplier = 3) {
         if (!candles || candles.length < period) return null;
         const closes = candles.map(c => c.close);
@@ -485,7 +483,7 @@
         return (hl2 - multiplier * atr).toFixed(2);
     }
     
-    // ---- Signal classification ----
+    // ---- Signal helpers ----
     function getSignalClass(signal) {
         const s = (signal || 'NEUTRAL').toUpperCase();
         if (s === 'BUY') return 'buy';
@@ -495,13 +493,13 @@
         return 'neutral';
     }
     
-    function renderRow(name, value, signal, extraClass = '') {
+    function renderRow(name, value, signal) {
         const sigClass = getSignalClass(signal);
         const valueText = (value !== undefined && value !== null) ? ` ${value}` : '';
         const displaySignal = signal || 'NEUTRAL';
         return `<div class="indicator-row">
             <span class="indicator-name">${name}</span>
-            <span class="signal-badge ${sigClass} ${extraClass}">${displaySignal}${valueText}</span>
+            <span class="signal-badge ${sigClass}">${displaySignal}${valueText}</span>
         </div>`;
     }
     
@@ -526,13 +524,11 @@
     async function analyzeStock(inputSymbol) {
         if (!inputSymbol) return;
         const cleanName = inputSymbol.toUpperCase().replace(/\.NS$/i, '');
-        if (cleanName === currentSymbol) return; // avoid re-analysis
+        if (cleanName === currentSymbol) return;
         currentSymbol = cleanName;
         
-        // Show loading state
         loadingOverlay.classList.remove('hidden');
         searchBtn.disabled = true;
-        // Reset odometers to zero
         updateOdometers(0, 0, 0);
         finalRecEl.innerText = '—';
         aiSummaryText.innerText = 'Analyzing...';
@@ -541,13 +537,11 @@
             const data = await fetchStockData(cleanName);
             symbolTitle.innerHTML = `${cleanName} <span style="font-size:0.8rem; color:#94a3b8;">₹${data.latest_price?.toFixed(2) || '—'}</span>`;
             
-            // Update chart
             updateChart(data.candles || []);
             
             const ind = data.indicators || {};
             const superTrendValue = calculateSuperTrendValue(data.candles);
             
-            // Render indicator categories
             trendIndicators.innerHTML = [
                 renderRow('EMA 20', ind.EMA20?.value, ind.EMA20?.signal),
                 renderRow('EMA 50', ind.EMA50?.value, ind.EMA50?.signal),
@@ -587,7 +581,6 @@
                 renderRow('Std Deviation', ind.StandardDeviation?.value, null),
             ].join('');
             
-            // Count signals properly
             const signalKeys = [
                 'EMA20', 'EMA50', 'EMA100', 'EMA200',
                 'SMA20', 'SMA50', 'SMA200',
@@ -628,7 +621,6 @@
             bullishPercentEl.innerText = Math.round(bullishPercent);
             bullishMeterFill.style.width = bullishPercent + '%';
             
-            // AI summary
             let summary = `🔍 <b>${cleanName}</b>: Based on ${total} technical indicators, the verdict is <b>${finalRec}</b>. `;
             if (buy > sell) {
                 summary += `📈 Bullish momentum with ${buy} BUY signals vs ${sell} SELL signals. `;
@@ -655,7 +647,7 @@
         }
     }
     
-    // ---- Suggestions with safe rendering ----
+    // ---- Suggestions with safe DOM rendering ----
     function showSuggestions(inputValue) {
         if (!inputValue || inputValue.length < 1) {
             suggestionsDropdown.classList.remove('show');
@@ -674,7 +666,6 @@
             item.className = 'suggestion-item';
             item.setAttribute('role', 'option');
             item.tabIndex = 0;
-            // Highlight matching part
             const index = sym.indexOf(upperInput);
             if (index === 0) {
                 const span = document.createElement('span');
@@ -703,9 +694,7 @@
     }
     
     // ---- Event listeners ----
-    stockInput.addEventListener('input', (e) => {
-        showSuggestions(e.target.value);
-    });
+    stockInput.addEventListener('input', (e) => showSuggestions(e.target.value));
     
     stockInput.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -740,31 +729,30 @@
         analyzeStock(stockInput.value.trim());
     });
     
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.search-wrapper')) {
-            hideSuggestions();
-        }
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-wrapper')) hideSuggestions();
     });
     
-    // Close on escape globally
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') hideSuggestions();
     });
     
-    // ---- Initial load ----
+    // ---- Initialization ----
     async function init() {
-        loadingOverlay.classList.add('hidden'); // initial state hidden until first analysis
+        loadingOverlay.classList.add('hidden');
         createChart();
         try {
             allSymbols = await loadAllSymbols();
             console.log(`Loaded ${allSymbols.length} symbols`);
-            aiSummaryText.innerText = 'Enter a symbol or click Analyze to begin.';
-            symbolTitle.innerText = 'Ready';
-            // Load default stock (first symbol)
-            if (allSymbols.length > 0) {
-                const defaultSym = allSymbols[0]; // e.g., RELIANCE
-                stockInput.value = defaultSym;
-                analyzeStock(defaultSym);
+            
+            // Set default stock explicitly to RELIANCE
+            const defaultSymbol = allSymbols.includes('RELIANCE') ? 'RELIANCE' : allSymbols[0] || '';
+            if (defaultSymbol) {
+                stockInput.value = defaultSymbol;
+                analyzeStock(defaultSymbol);
+            } else {
+                aiSummaryText.innerText = 'Enter a symbol to begin.';
+                symbolTitle.innerText = 'Ready';
             }
         } catch (err) {
             aiSummaryText.innerText = 'Failed to load symbol list. Please refresh.';
