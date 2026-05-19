@@ -48,116 +48,69 @@ def fetch_ticker_data(ticker):
         print(f"  Error fetching {ticker}: {e}")
         return None
 
-# ========== INDICATOR CALCULATION FUNCTIONS (FIXED) ==========
+# ========== INDICATOR CALCULATION FUNCTIONS ==========
 
 def ema(values, period):
-    """
-    Exponential Moving Average.
-    Uses SMA for the first value to reduce early bias.
-    Returns array of same length as values.
-    """
     if len(values) < period:
         return values
     alpha = 2 / (period + 1)
-    result = [np.nan] * (period - 1)  # not enough data for full EMA
-    # Initial value as SMA of first `period` elements
-    result.append(sum(values[:period]) / period)
-    for val in values[period:]:
+    result = [values[0]]
+    for val in values[1:]:
         result.append(alpha * val + (1 - alpha) * result[-1])
     return result
 
 def sma(values, period):
-    """Simple Moving Average. Returns last SMA value."""
     if len(values) < period:
         return values[-1] if values else 0
     return sum(values[-period:]) / period
 
 def rsi(closes, period=14):
-    """
-    Wilder smoothed RSI.
-    Returns the latest RSI value (scalar) between 0 and 100.
-    """
     if len(closes) < period + 1:
-        return 50.0
-    deltas = np.diff(closes)
-    gains = np.where(deltas > 0, deltas, 0)
-    losses = np.where(deltas < 0, -deltas, 0)
-
-    # Initial average gains/losses (simple mean of first `period` values)
-    avg_gain = gains[:period].mean()
-    avg_loss = losses[:period].mean()
-
-    # Wilder smoothing
-    alpha = 1 / period
-    for i in range(period, len(gains)):
-        avg_gain = alpha * gains[i] + (1 - alpha) * avg_gain
-        avg_loss = alpha * losses[i] + (1 - alpha) * avg_loss
-
+        return 50
+    gains, losses = [], []
+    for i in range(1, len(closes)):
+        diff = closes[i] - closes[i-1]
+        gains.append(diff if diff > 0 else 0)
+        losses.append(-diff if diff < 0 else 0)
+    avg_gain = sum(gains[-period:]) / period if len(gains) >= period else (sum(gains) / len(gains) if gains else 0)
+    avg_loss = sum(losses[-period:]) / period if len(losses) >= period else (sum(losses) / len(losses) if losses else 0)
     if avg_loss == 0:
-        return 100.0
+        return 100
     rs = avg_gain / avg_loss
-    rsi_val = 100 - (100 / (1 + rs))
-    return max(0.0, min(100.0, rsi_val))
+    return 100 - (100 / (1 + rs))
 
 def macd(closes, fast=12, slow=26, signal=9):
-    """
-    MACD line, signal line, histogram.
-    Uses EMA with corrected alignment.
-    Returns (macd_line, signal_line, histogram) as scalars.
-    """
     if len(closes) < slow:
-        return closes[-1], closes[-1], 0.0
-
+        return closes[-1], closes[-1], 0
     ema_fast = ema(closes, fast)
     ema_slow = ema(closes, slow)
-
-    # MACD line = fast EMA - slow EMA (only where both have values)
     min_len = min(len(ema_fast), len(ema_slow))
     macd_line = [ema_fast[i] - ema_slow[i] for i in range(min_len)]
-
-    # Signal line = EMA of MACD line
     signal_line = ema(macd_line, signal) if len(macd_line) >= signal else macd_line
-
-    hist = macd_line[-1] - signal_line[-1] if signal_line else 0.0
-    return macd_line[-1], signal_line[-1] if signal_line else 0.0, hist
+    hist = macd_line[-1] - signal_line[-1] if signal_line else 0
+    return macd_line[-1], signal_line[-1] if signal_line else 0, hist
 
 def bollinger_bands(closes, period=20, std_dev=2):
-    """Bollinger Bands using sample standard deviation (ddof=1)."""
     if len(closes) < period:
         return None, None, None
     recent = closes[-period:]
     sma_val = sum(recent) / period
-    std = np.std(recent, ddof=1)  # sample std
+    variance = sum((x - sma_val) ** 2 for x in recent) / period
+    std = math.sqrt(variance)
     return sma_val + std_dev * std, sma_val, sma_val - std_dev * std
 
 def atr(high, low, close, period=14):
-    """
-    Wilder smoothed ATR.
-    Returns latest ATR value (scalar) or None if insufficient data.
-    """
     if len(high) < period + 1:
         return None
-
-    # True Range for each interval
-    tr = [max(high[i] - low[i],
-              abs(high[i] - close[i-1]),
-              abs(low[i] - close[i-1])) for i in range(1, len(high))]
-
-    if len(tr) < period:
+    true_ranges = []
+    for i in range(1, len(high)):
+        tr = max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1]))
+        true_ranges.append(tr)
+    if len(true_ranges) < period:
         return None
-
-    # Initial ATR = simple average of first `period` TR values
-    atr_val = sum(tr[:period]) / period
-    alpha = 1 / period
-
-    # Wilder smoothing for the rest
-    for i in range(period, len(tr)):
-        atr_val = alpha * tr[i] + (1 - alpha) * atr_val
-
-    return atr_val
+    return sum(true_ranges[-period:]) / period
 
 def obv(closes, volumes):
-    """On-Balance Volume."""
     obv_vals = [volumes[0]]
     for i in range(1, len(closes)):
         if closes[i] > closes[i-1]:
@@ -169,305 +122,162 @@ def obv(closes, volumes):
     return obv_vals
 
 def stochastic_rsi(closes, period=14):
-    """
-    Stochastic of RSI using Wilder‑smoothed RSI.
-    Returns a scalar between 0 and 100.
-    """
-    if len(closes) < period * 2:
-        return 50.0
-
-    # Compute full RSI series first (Wilder smoothed)
+    if len(closes) < period + 1:
+        return 50
     rsi_vals = []
-    # Use the fixed rsi function iteratively? We'll compute rolling RSI manually
-    # for each window to avoid re‑using the function that only returns last.
-    deltas = np.diff(closes)
-    gains = np.where(deltas > 0, deltas, 0)
-    losses = np.where(deltas < 0, -deltas, 0)
-
-    avg_gain = gains[:period].mean()
-    avg_loss = losses[:period].mean()
-    alpha = 1 / period
-
-    # First RSI value at index = period
-    rs = avg_gain / avg_loss if avg_loss != 0 else float('inf')
-    rsi_val = 100 - (100 / (1 + rs))
-    rsi_vals.append(rsi_val)
-
-    for i in range(period, len(gains)):
-        avg_gain = alpha * gains[i] + (1 - alpha) * avg_gain
-        avg_loss = alpha * losses[i] + (1 - alpha) * avg_loss
-        rs = avg_gain / avg_loss if avg_loss != 0 else float('inf')
-        rsi_val = 100 - (100 / (1 + rs))
-        rsi_vals.append(rsi_val)
-
-    # Now Stochastic of RSI: take last `period` RSI values
+    for i in range(period, len(closes)):
+        rsi_vals.append(rsi(closes[:i+1], period))
+    if len(rsi_vals) < period:
+        return 50
     recent = rsi_vals[-period:]
     min_rsi = min(recent)
     max_rsi = max(recent)
     if max_rsi == min_rsi:
-        return 50.0
+        return 50
     return (recent[-1] - min_rsi) / (max_rsi - min_rsi) * 100
 
 def cci(high, low, close, period=20):
-    """Commodity Channel Index."""
     if len(close) < period:
-        return 0.0
+        return 0
     tp = [(high[i] + low[i] + close[i]) / 3 for i in range(len(close))]
     sma_tp = sum(tp[-period:]) / period
     mad = sum(abs(tp[i] - sma_tp) for i in range(-period, 0)) / period
     if mad == 0:
-        return 0.0
+        return 0
     return (tp[-1] - sma_tp) / (0.015 * mad)
 
 def williams_r(high, low, close, period=14):
-    """Williams %R."""
     if len(close) < period:
-        return -50.0
+        return -50
     highest_high = max(high[-period:])
     lowest_low = min(low[-period:])
     if highest_high == lowest_low:
-        return -50.0
+        return -50
     return (highest_high - close[-1]) / (highest_high - lowest_low) * -100
 
 def roc(closes, period=12):
-    """Rate of Change."""
     if len(closes) < period + 1:
-        return 0.0
+        return 0
     prev = closes[-period-1]
     if prev == 0:
-        return 0.0
+        return 0
     return (closes[-1] - prev) / prev * 100
 
 def momentum(closes, period=10):
-    """Momentum (difference)."""
     if len(closes) < period + 1:
-        return 0.0
+        return 0
     return closes[-1] - closes[-period-1]
 
 def mfi(high, low, close, volume, period=14):
-    """Money Flow Index."""
     if len(close) < period + 1:
-        return 50.0
-    typical = [(high[i] + low[i] + close[i]) / 3 for i in range(len(close))]
-    money_flow = [typical[i] * volume[i] for i in range(len(close))]
-    pos_flow = [0] * len(close)
-    neg_flow = [0] * len(close)
-
+        return 50
+    typical_price = [(high[i] + low[i] + close[i]) / 3 for i in range(len(close))]
+    money_flow = [typical_price[i] * volume[i] for i in range(len(close))]
+    positive_flow, negative_flow = [], []
     for i in range(1, len(close)):
-        if typical[i] > typical[i-1]:
-            pos_flow[i] = money_flow[i]
-        elif typical[i] < typical[i-1]:
-            neg_flow[i] = money_flow[i]
-
-    pos_sum = sum(pos_flow[-period:])
-    neg_sum = sum(neg_flow[-period:])
+        if typical_price[i] > typical_price[i-1]:
+            positive_flow.append(money_flow[i])
+            negative_flow.append(0)
+        else:
+            positive_flow.append(0)
+            negative_flow.append(money_flow[i])
+    if len(positive_flow) < period:
+        return 50
+    pos_sum = sum(positive_flow[-period:])
+    neg_sum = sum(negative_flow[-period:])
     if neg_sum == 0:
-        return 100.0
-    mr = pos_sum / neg_sum
-    return 100 - (100 / (1 + mr))
+        return 100
+    money_ratio = pos_sum / neg_sum
+    return 100 - (100 / (1 + money_ratio))
 
 def adx(high, low, close, period=14):
-    """
-    Wilder smoothed ADX.
-    Returns latest ADX value (scalar) or None.
-    """
     if len(high) < period + 1:
         return None
-
-    # True Range, +DM, -DM
     tr = []
     plus_dm = []
     minus_dm = []
     for i in range(1, len(high)):
-        tr.append(max(high[i] - low[i],
-                      abs(high[i] - close[i-1]),
-                      abs(low[i] - close[i-1])))
-        up = high[i] - high[i-1]
-        down = low[i-1] - low[i]
-        plus_dm.append(up if (up > down and up > 0) else 0)
-        minus_dm.append(down if (down > up and down > 0) else 0)
-
+        tr.append(max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1])))
+        up_move = high[i] - high[i-1]
+        down_move = low[i-1] - low[i]
+        plus_dm.append(up_move if up_move > down_move and up_move > 0 else 0)
+        minus_dm.append(down_move if down_move > up_move and down_move > 0 else 0)
     if len(tr) < period:
         return None
-
-    # Initial Wilder averages
-    atr_val = sum(tr[:period]) / period
-    plus_di = sum(plus_dm[:period]) / period
-    minus_di = sum(minus_dm[:period]) / period
-
-    alpha = 1 / period
-    # Smooth from period onward
-    for i in range(period, len(tr)):
-        atr_val = alpha * tr[i] + (1 - alpha) * atr_val
-        plus_di = alpha * plus_dm[i] + (1 - alpha) * plus_di
-        minus_di = alpha * minus_dm[i] + (1 - alpha) * minus_di
-
-    # Latest +DI and -DI
+    atr_val = sum(tr[-period:]) / period
     if atr_val == 0:
-        return 0.0
-    plus_di_val = 100 * plus_di / atr_val
-    minus_di_val = 100 * minus_di / atr_val
-
-    # DX = 100 * |+DI - -DI| / (+DI + -DI)
-    di_sum = plus_di_val + minus_di_val
-    if di_sum == 0:
-        return 0.0
-    dx_val = 100 * abs(plus_di_val - minus_di_val) / di_sum
-
-    # ADX is Wilder smoothed DX (period same)
-    # We need to simulate an ADX series; we already computed DX for latest,
-    # but proper ADX requires a running average of DX. We'll approximate
-    # by keeping a running average of DX values computed at each step.
-    # We'll compute all DX values and then smooth them.
-    dx_vals = []
-    atr_run = sum(tr[:period]) / period
-    plus_run = sum(plus_dm[:period]) / period
-    minus_run = sum(minus_dm[:period]) / period
-    for i in range(period, len(tr)):
-        atr_run = alpha * tr[i] + (1 - alpha) * atr_run
-        plus_run = alpha * plus_dm[i] + (1 - alpha) * plus_run
-        minus_run = alpha * minus_dm[i] + (1 - alpha) * minus_run
-        if atr_run != 0:
-            pdi = 100 * plus_run / atr_run
-            mdi = 100 * minus_run / atr_run
-            di_sum = pdi + mdi
-            dx = 100 * abs(pdi - mdi) / di_sum if di_sum != 0 else 0.0
-            dx_vals.append(dx)
-
-    if not dx_vals:
         return None
-
-    # Smooth DX with Wilder's method to get ADX
-    adx_smooth = sum(dx_vals[:period]) / period  # initial
-    for i in range(period, len(dx_vals)):
-        adx_smooth = alpha * dx_vals[i] + (1 - alpha) * adx_smooth
-
-    return adx_smooth
+    plus_di = 100 * (sum(plus_dm[-period:]) / period) / atr_val
+    minus_di = 100 * (sum(minus_dm[-period:]) / period) / atr_val
+    di_sum = plus_di + minus_di
+    if di_sum == 0:
+        return 0
+    dx = 100 * abs(plus_di - minus_di) / di_sum
+    return dx
 
 def supertrend(high, low, close, period=10, multiplier=3):
-    """
-    Proper SuperTrend using ATR and trend‑continuation logic.
-    Returns 'BUY' or 'SELL'.
-    """
     if len(high) < period + 1:
         return "NEUTRAL"
-
-    # Wilder smoothed ATR
-    tr = [max(high[i] - low[i],
-              abs(high[i] - close[i-1]),
-              abs(low[i] - close[i-1])) for i in range(1, len(high))]
-    atr_val = sum(tr[:period]) / period
-    alpha = 1 / period
-    for i in range(period, len(tr)):
-        atr_val = alpha * tr[i] + (1 - alpha) * atr_val
-
-    hl2 = [(high[i] + low[i]) / 2 for i in range(len(high))]
-    # Upper/Lower bands
-    upper = [hl2[i] + multiplier * atr_val for i in range(len(hl2))]
-    lower = [hl2[i] - multiplier * atr_val for i in range(len(hl2))]
-
-    # Trend determination
-    trend = [True] * len(high)  # True = uptrend
+    atr_vals = []
     for i in range(1, len(high)):
-        if trend[i-1]:  # previous was uptrend
-            if close[i] <= lower[i-1]:
-                trend[i] = False
-            else:
-                trend[i] = True
-                lower[i] = max(lower[i], lower[i-1])
-        else:           # previous was downtrend
-            if close[i] >= upper[i-1]:
-                trend[i] = True
-            else:
-                trend[i] = False
-                upper[i] = min(upper[i], upper[i-1])
-
-    return "BUY" if trend[-1] else "SELL"
+        tr = max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1]))
+        atr_vals.append(tr)
+    if len(atr_vals) < period:
+        return "NEUTRAL"
+    atr_val = sum(atr_vals[-period:]) / period
+    hl2 = (high[-1] + low[-1]) / 2
+    lower_band = hl2 - multiplier * atr_val
+    return "BUY" if close[-1] > lower_band else "SELL"
 
 def ichimoku(high, low, close):
-    """
-    Full Ichimoku: Tenkan, Kijun, Senkou A, Senkou B, Chikou.
-    Returns signal based on cloud position.
-    """
     if len(high) < 52:
         return "NEUTRAL"
-
-    n = len(high)
-    # Tenkan‑sen (9‑period)
-    tenkan = [(max(high[max(0,i-8):i+1]) + min(low[max(0,i-8):i+1])) / 2 for i in range(n)]
-    # Kijun‑sen (26‑period)
-    kijun = [(max(high[max(0,i-25):i+1]) + min(low[max(0,i-25):i+1])) / 2 for i in range(n)]
-
-    # Senkou Span A = (Tenkan + Kijun)/2 plotted 26 periods ahead
-    senkou_a = [None] * n
-    for i in range(26, n-26):
-        senkou_a[i+26] = (tenkan[i] + kijun[i]) / 2
-
-    # Senkou Span B = (52‑period high+low)/2 plotted 26 periods ahead
-    senkou_b = [None] * n
-    for i in range(51, n-26):
-        senkou_b[i+26] = (max(high[i-51:i+1]) + min(low[i-51:i+1])) / 2
-
-    # Chikou Span = close shifted 26 periods back
-    chikou = [None] * n
-    for i in range(26, n):
-        chikou[i-26] = close[i]
-
-    # Signal: latest close vs cloud (Senkou A & B at latest index)
-    last_a = senkou_a[-1]
-    last_b = senkou_b[-1]
-    if last_a is not None and last_b is not None:
-        if close[-1] > max(last_a, last_b):
-            return "BUY"
-        elif close[-1] < min(last_a, last_b):
-            return "SELL"
-    return "NEUTRAL"
+    tenkan_high = max(high[-9:])
+    tenkan_low = min(low[-9:])
+    tenkan = (tenkan_high + tenkan_low) / 2
+    kijun_high = max(high[-26:])
+    kijun_low = min(low[-26:])
+    kijun = (kijun_high + kijun_low) / 2
+    senkou_a = (tenkan + kijun) / 2
+    return "BUY" if close[-1] > senkou_a else "SELL"
 
 def parabolic_sar(high, low, step=0.02, max_step=0.2):
-    """Classic Parabolic SAR. Returns 'BUY' if uptrend, else 'SELL'."""
     if len(high) < 2:
         return "NEUTRAL"
-
-    n = len(high)
-    sar = [0.0] * n
-    trend = [True] * n  # True = uptrend
-    af = step
+    up_trend = True
+    sar = low[0]
     ep = high[0]
-    sar[0] = low[0]
-
-    for i in range(1, n):
-        if trend[i-1]:
-            sar[i] = sar[i-1] + af * (ep - sar[i-1])
-            sar[i] = min(sar[i], low[i-1], low[i-2] if i > 1 else low[i-1])
-            if low[i] < sar[i]:
-                trend[i] = False
-                sar[i] = ep
-                ep = low[i]
+    af = step
+    for i in range(1, len(high)):
+        if up_trend:
+            sar = sar + af * (ep - sar)
+            if sar > low[i]:
+                up_trend = False
+                sar = ep
                 af = step
+                ep = low[i]
             else:
                 if high[i] > ep:
                     ep = high[i]
                     af = min(af + step, max_step)
         else:
-            sar[i] = sar[i-1] + af * (ep - sar[i-1])
-            sar[i] = max(sar[i], high[i-1], high[i-2] if i > 1 else high[i-1])
-            if high[i] > sar[i]:
-                trend[i] = True
-                sar[i] = ep
-                ep = high[i]
+            sar = sar + af * (ep - sar)
+            if sar < high[i]:
+                up_trend = True
+                sar = ep
                 af = step
+                ep = high[i]
             else:
                 if low[i] < ep:
                     ep = low[i]
                     af = min(af + step, max_step)
-
-    return "BUY" if trend[-1] else "SELL"
+    return "BUY" if up_trend else "SELL"
 
 def keltner_channel(high, low, close, period=20, multiplier=2):
     if len(close) < period:
         return None, None, None
-    ema_val = ema(close, period)[-1]  # uses fixed EMA
-    atr_val = atr(high, low, close, period)  # uses fixed ATR
+    ema_val = ema(close, period)[-1]
+    atr_val = atr(high, low, close, period)
     if atr_val is None:
         return None, None, None
     return ema_val + multiplier * atr_val, ema_val, ema_val - multiplier * atr_val
@@ -478,82 +288,73 @@ def donchian_channel(high, low, period=20):
     return max(high[-period:]), min(low[-period:])
 
 def aroon(high, low, period=25):
-    """Fixed Aroon: days since high/low correctly measured from most recent bar."""
     if len(high) < period:
-        return 50.0, 50.0
-    window_high = high[-period:]
-    window_low = low[-period:]
-    # Days since highest high (0 = most recent)
-    days_since_high = period - 1 - np.argmax(window_high)
-    days_since_low = period - 1 - np.argmin(window_low)
-    aroon_up = ((period - days_since_high) / period) * 100
-    aroon_down = ((period - days_since_low) / period) * 100
+        return 50, 50
+    highest_idx = np.argmax(high[-period:])
+    lowest_idx = np.argmin(low[-period:])
+    aroon_up = ((period - highest_idx) / period) * 100
+    aroon_down = ((period - lowest_idx) / period) * 100
     return aroon_up, aroon_down
 
 def ultimate_oscillator(high, low, close, period1=7, period2=14, period3=28):
     if len(close) < period3 + 1:
-        return 50.0
-    bp = [close[i] - min(low[i], close[i-1]) for i in range(1, len(close))]
-    tr = [max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1])) for i in range(1, len(close))]
-
-    def avg(arr_bp, arr_tr, period):
-        sum_bp = sum(arr_bp[-period:])
-        sum_tr = sum(arr_tr[-period:])
-        return sum_bp / sum_tr if sum_tr > 0 else 0.0
-
-    avg1 = avg(bp, tr, period1)
-    avg2 = avg(bp, tr, period2)
-    avg3 = avg(bp, tr, period3)
-    return (4 * avg1 + 2 * avg2 + avg3) / 7 * 100
+        return 50
+    bp = []
+    tr = []
+    for i in range(1, len(close)):
+        bp.append(close[i] - min(low[i], close[i-1]))
+        tr.append(max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1])))
+    sum_tr1 = sum(tr[-period1:]) if tr else 1
+    sum_tr2 = sum(tr[-period2:]) if tr else 1
+    sum_tr3 = sum(tr[-period3:]) if tr else 1
+    avg1 = sum(bp[-period1:]) / sum_tr1 if sum_tr1 > 0 else 0
+    avg2 = sum(bp[-period2:]) / sum_tr2 if sum_tr2 > 0 else 0
+    avg3 = sum(bp[-period3:]) / sum_tr3 if sum_tr3 > 0 else 0
+    return ((4 * avg1) + (2 * avg2) + avg3) / 7 * 100
 
 def cmf(high, low, close, volume, period=20):
     if len(close) < period:
-        return 0.0
+        return 0
     mfv = []
     for i in range(len(close)):
         if high[i] == low[i]:
-            mf = 0.0
+            mf = 0
         else:
             mf = ((close[i] - low[i]) - (high[i] - close[i])) / (high[i] - low[i])
         mfv.append(mf * volume[i])
     sum_mfv = sum(mfv[-period:])
     sum_vol = sum(volume[-period:])
-    return sum_mfv / sum_vol if sum_vol > 0 else 0.0
+    return sum_mfv / sum_vol if sum_vol > 0 else 0
 
 def ease_of_movement(high, low, volume, period=14):
     if len(high) < period + 1:
-        return 0.0
+        return 0
     emv = []
     for i in range(1, len(high)):
         distance = ((high[i] + low[i]) / 2) - ((high[i-1] + low[i-1]) / 2)
-        box_ratio = volume[i] / 1e8  # standard scaling
-        if high[i] - low[i] != 0:
-            box_ratio /= (high[i] - low[i])
-        else:
-            box_ratio /= 0.0001
+        box_ratio = (volume[i] / 100000000) / ((high[i] - low[i]) + 0.0001)
         if box_ratio != 0:
             emv.append(distance / box_ratio)
-        else:
-            emv.append(0.0)
     if len(emv) < period:
-        return 0.0
+        return 0
     return sum(emv[-period:]) / period
 
 def std_deviation(closes, period=20):
     if len(closes) < period:
-        return 0.0
+        return 0
     recent = closes[-period:]
-    return np.std(recent, ddof=1)
+    mean = sum(recent) / period
+    variance = sum((x - mean) ** 2 for x in recent) / period
+    return math.sqrt(variance)
 
 def vwap(candles):
-    """Volume-Weighted Average Price (whole series)."""
-    total_typical = 0.0
-    total_volume = 0.0
+    total_typical = 0
+    total_volume = 0
     for c in candles:
         typical = (c['high'] + c['low'] + c['close']) / 3
         total_typical += typical * c['volume']
         total_volume += c['volume']
-    return total_typical / total_volume if total_volume > 0 else 0.0
+    return total_typical / total_volume if total_volume > 0 else 0
 
 def get_signal(buy_cond, sell_cond):
     if buy_cond:
@@ -563,7 +364,7 @@ def get_signal(buy_cond, sell_cond):
     return 'NEUTRAL'
 
 def parse_candles(data):
-    """Parse Yahoo Finance JSON format into rows (unchanged)."""
+    """Parse Yahoo Finance JSON format into rows"""
     rows = []
     
     if isinstance(data, list):
@@ -589,7 +390,7 @@ def parse_candles(data):
     return rows
 
 def process_ticker(ticker):
-    """Process a single ticker (unchanged apart from using fixed indicator functions)."""
+    """Process a single ticker"""
     print(f"\n📊 Processing {ticker}...")
     
     # Fetch data from GitHub
@@ -731,26 +532,22 @@ def process_ticker(ticker):
     
     # EMAs and SMAs
     try:
-        ema20_vals = ema(closes, 20)
-        ema20 = ema20_vals[-1] if len(ema20_vals) >= 20 else latest_close
+        ema20 = ema(closes, 20)[-1] if len(closes) >= 20 else latest_close
     except:
         ema20 = latest_close
     
     try:
-        ema50_vals = ema(closes, 50)
-        ema50 = ema50_vals[-1] if len(ema50_vals) >= 50 else latest_close
+        ema50 = ema(closes, 50)[-1] if len(closes) >= 50 else latest_close
     except:
         ema50 = latest_close
     
     try:
-        ema100_vals = ema(closes, 100)
-        ema100 = ema100_vals[-1] if len(ema100_vals) >= 100 else latest_close
+        ema100 = ema(closes, 100)[-1] if len(closes) >= 100 else latest_close
     except:
         ema100 = latest_close
     
     try:
-        ema200_vals = ema(closes, 200)
-        ema200 = ema200_vals[-1] if len(ema200_vals) >= 200 else latest_close
+        ema200 = ema(closes, 200)[-1] if len(closes) >= 200 else latest_close
     except:
         ema200 = latest_close
     
@@ -769,11 +566,12 @@ def process_ticker(ticker):
     except:
         sma200 = latest_close
     
-    # Calculate summary signals (exactly as before)
+    # Calculate summary signals
     buy_signals = 0
     sell_signals = 0
     total_indicators = 0
     
+    # Count signals from various indicators
     if rsi_val < 30: buy_signals += 1
     elif rsi_val > 70: sell_signals += 1
     total_indicators += 1
@@ -889,6 +687,7 @@ def main():
     
     if not tickers:
         print("❌ Could not fetch ticker list. Using fallback Nifty 50 stocks...")
+        # Fallback: common Nifty 50 stocks
         fallback_tickers = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 
                            'HINDUNILVR', 'SBIN', 'BHARTIARTL', 'KOTAKBANK', 'ITC',
                            'AXISBANK', 'LT', 'WIPRO', 'HCLTECH', 'SUNPHARMA']
