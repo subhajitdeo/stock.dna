@@ -13,21 +13,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: pip install pandas numpy requests
-      
+
       - name: Run calculator
         run: python calculate.py
-      
-      - name: Commit results
+
+      - name: Commit and push results (with conflict handling)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
           git add data/processed/
-          git diff --cached --quiet || git commit -m "Update indicators [skip ci]"
-          git push
+          
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          git commit -m "Update indicators [skip ci]"
+          
+          # Pull latest changes before pushing (fixes race condition)
+          git pull --rebase origin main || true
+          
+          # Push safely
+          git push origin main --force-with-lease
