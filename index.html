@@ -720,7 +720,7 @@
         loadingOverlay.classList.add('hidden');
         createChart();
         allSymbols = await loadAllSymbols();
-        const def = allSymbols.includes('RELIANCE') ? 'RELIANCE' : (allSymbols[0]||'');
+        const def = allSymbols.includes('ABB') ? 'ABB' : (allSymbols[0]||'');
         if (def) {
             stockInput.value = def;
             analyzeStock(def);
