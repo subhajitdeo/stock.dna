@@ -1,22 +1,14 @@
 {
   "symbol": "HAL",
-  "updated_at": "2026-06-02T14:40:56.130496",
-  "latest_price": 4254.1,
-  "final_signal": "BUY",
+  "updated_at": "2026-06-03T15:22:49.370601",
+  "latest_price": 4264.1,
+  "final_signal": "NEUTRAL",
   "signal_summary": {
-    "buy_signals": 4,
+    "buy_signals": 3,
     "sell_signals": 3,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-06-02",
-      "open": 4970.0,
-      "high": 5035.0,
-      "low": 4950.0,
-      "close": 5017.10009765625,
-      "volume": 1084257
-    },
     {
       "time": "2025-06-03",
       "open": 5027.0,
@@ -1999,49 +1991,65 @@
       "high": 4340.0,
       "low": 4233.2001953125,
       "close": 4254.10009765625,
-      "volume": 707105
+      "volume": 707271
+    },
+    {
+      "time": "2026-06-02",
+      "open": 4210.0,
+      "high": 4300.0,
+      "low": 4177.0,
+      "close": 4278.5,
+      "volume": 1251023
+    },
+    {
+      "time": "2026-06-03",
+      "open": 4295.5,
+      "high": 4296.7998046875,
+      "low": 4209.60009765625,
+      "close": 4264.10009765625,
+      "volume": 1122251
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 24.74,
+      "value": 21.93,
       "signal": "BUY"
     },
     "StochasticRSI": {
-      "value": 8.6,
+      "value": 4.58,
       "signal": "BUY"
     },
     "MACD": {
-      "value": 1.63,
+      "value": -14.66,
       "signal": "SELL"
     },
-    "MACD_Histogram": -36.67,
+    "MACD_Histogram": -35.13,
     "CCI": {
-      "value": -97.77,
+      "value": -91.93,
       "signal": "NEUTRAL"
     },
     "Williams_R": {
-      "value": -87.52,
-      "signal": "BUY"
+      "value": -79.89,
+      "signal": "NEUTRAL"
     },
     "ROC": {
-      "value": -7.68,
+      "value": -1.44,
       "signal": "SELL"
     },
     "Momentum": {
-      "value": -72.4,
+      "value": -62.4,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 44.18,
+      "value": 37.11,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 37.67,
+      "value": 45.24,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 42.41,
+      "value": 66.67,
       "signal": "STRONG"
     },
     "SuperTrend": {
@@ -2054,73 +2062,73 @@
       "signal": "SELL"
     },
     "Aroon": {
-      "up": 68.0,
-      "down": 44.0,
+      "up": 76.0,
+      "down": 52.0,
       "signal": "NEUTRAL"
     },
     "EMA20": {
-      "value": 4394.3,
+      "value": 4371.92,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 4319.52,
+      "value": 4315.8,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 4304.11,
+      "value": 4302.64,
       "signal": "SELL"
     },
     "EMA200": {
-      "value": 4409.53,
+      "value": 4404.5,
       "signal": "SELL"
     },
     "SMA20": {
-      "value": 4485.57,
+      "value": 4450.84,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 4226.07,
+      "value": 4241.64,
       "signal": "BUY"
     },
     "SMA200": {
-      "value": 4407.72,
+      "value": 4406.0,
       "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 4815.2,
-      "middle": 4485.57,
-      "lower": 4155.95,
+      "upper": 4790.11,
+      "middle": 4450.84,
+      "lower": 4111.57,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 4639.67,
-      "middle": 4394.3,
-      "lower": 4148.93
+      "upper": 4617.81,
+      "middle": 4371.92,
+      "lower": 4126.03
     },
     "DonchianChannel": {
       "upper": 4836.3,
       "lower": 4175.0
     },
     "ATR": {
-      "value": 121.95
+      "value": 107.26
     },
     "StandardDeviation": {
-      "value": 164.81
+      "value": 169.63
     },
     "OBV": {
-      "value": 2692276,
+      "value": 4064829,
       "signal": "SELL"
     },
     "CMF": {
-      "value": -0.1655,
+      "value": -0.1197,
       "signal": "SELL"
     },
     "VWAP": {
-      "value": 4461.32,
+      "value": 4457.99,
       "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": -397037.0594
+      "value": -280990.0578
     }
   }
 }
