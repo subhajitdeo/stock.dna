@@ -1,22 +1,14 @@
 {
   "symbol": "NAVA",
-  "updated_at": "2026-06-03T15:23:14.090836",
-  "latest_price": 605.2,
-  "final_signal": "NEUTRAL",
+  "updated_at": "2026-06-04T13:51:55.728571",
+  "latest_price": 603.05,
+  "final_signal": "STRONG_SELL",
   "signal_summary": {
-    "buy_signals": 3,
-    "sell_signals": 3,
+    "buy_signals": 1,
+    "sell_signals": 4,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-06-03",
-      "open": 483.3500061035156,
-      "high": 504.29998779296875,
-      "low": 477.0,
-      "close": 489.3500061035156,
-      "volume": 722457
-    },
     {
       "time": "2025-06-04",
       "open": 490.0,
@@ -2007,50 +1999,58 @@
       "high": 611.75,
       "low": 597.9000244140625,
       "close": 605.2000122070312,
-      "volume": 437554
+      "volume": 437580
+    },
+    {
+      "time": "2026-06-04",
+      "open": 605.2000122070312,
+      "high": 608.7999877929688,
+      "low": 598.2999877929688,
+      "close": 603.0499877929688,
+      "volume": 228949
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 25.42,
-      "signal": "BUY"
-    },
-    "StochasticRSI": {
-      "value": 21.05,
+      "value": 40.0,
       "signal": "NEUTRAL"
     },
-    "MACD": {
-      "value": -13.72,
+    "StochasticRSI": {
+      "value": 86.4,
       "signal": "SELL"
     },
-    "MACD_Histogram": -4.91,
+    "MACD": {
+      "value": -13.62,
+      "signal": "SELL"
+    },
+    "MACD_Histogram": -3.85,
     "CCI": {
-      "value": -57.65,
+      "value": -56.55,
       "signal": "NEUTRAL"
     },
     "Williams_R": {
-      "value": -86.09,
-      "signal": "BUY"
+      "value": -67.18,
+      "signal": "NEUTRAL"
     },
     "ROC": {
-      "value": 0.89,
+      "value": 0.03,
       "signal": "BUY"
     },
     "Momentum": {
-      "value": -22.15,
+      "value": -5.2,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 26.38,
+      "value": 40.01,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 32.9,
+      "value": 36.99,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 51.64,
-      "signal": "STRONG"
+      "value": 14.02,
+      "signal": "WEAK"
     },
     "SuperTrend": {
       "signal": "BUY"
@@ -2062,73 +2062,73 @@
       "signal": "SELL"
     },
     "Aroon": {
-      "up": 72.0,
-      "down": 16.0,
+      "up": 76.0,
+      "down": 20.0,
       "signal": "BUY"
     },
     "EMA20": {
-      "value": 624.89,
+      "value": 622.81,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 624.89,
+      "value": 624.04,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 610.4,
+      "value": 610.53,
       "signal": "SELL"
     },
     "EMA200": {
-      "value": 593.74,
+      "value": 597.15,
       "signal": "BUY"
     },
     "SMA20": {
-      "value": 639.7,
+      "value": 634.06,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 630.19,
+      "value": 631.18,
       "signal": "SELL"
     },
     "SMA200": {
-      "value": 603.16,
-      "signal": "BUY"
+      "value": 603.07,
+      "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 736.13,
-      "middle": 639.7,
-      "lower": 543.27,
+      "upper": 725.06,
+      "middle": 634.06,
+      "lower": 543.06,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 677.52,
-      "middle": 624.89,
-      "lower": 572.26
+      "upper": 673.38,
+      "middle": 622.81,
+      "lower": 572.23
     },
     "DonchianChannel": {
       "upper": 739.4,
       "lower": 586.0
     },
     "ATR": {
-      "value": 26.43
+      "value": 19.39
     },
     "StandardDeviation": {
-      "value": 48.21
+      "value": 45.5
     },
     "OBV": {
-      "value": 93918538,
-      "signal": "BUY"
+      "value": 92967158,
+      "signal": "SELL"
     },
     "CMF": {
-      "value": -0.3174,
+      "value": -0.3334,
       "signal": "SELL"
     },
     "VWAP": {
-      "value": 616.9,
+      "value": 617.32,
       "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": -22571.1754
+      "value": -24158.8446
     }
   }
 }
