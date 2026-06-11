@@ -1,22 +1,14 @@
 {
   "symbol": "TITAN",
-  "updated_at": "2026-06-10T14:14:22.162975",
-  "latest_price": 4042.1,
-  "final_signal": "BUY",
+  "updated_at": "2026-06-11T14:27:32.074808",
+  "latest_price": 4025.2,
+  "final_signal": "NEUTRAL",
   "signal_summary": {
     "buy_signals": 3,
-    "sell_signals": 2,
+    "sell_signals": 3,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-06-10",
-      "open": 3545.0,
-      "high": 3545.0,
-      "low": 3506.10009765625,
-      "close": 3524.199951171875,
-      "volume": 561695
-    },
     {
       "time": "2025-06-11",
       "open": 3525.0,
@@ -2007,49 +1999,57 @@
       "high": 4119.10009765625,
       "low": 4035.0,
       "close": 4042.10009765625,
-      "volume": 613590
+      "volume": 613629
+    },
+    {
+      "time": "2026-06-11",
+      "open": 4020.10009765625,
+      "high": 4069.699951171875,
+      "low": 3962.800048828125,
+      "close": 4025.199951171875,
+      "volume": 767613
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 47.21,
+      "value": 46.35,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 65.73,
+      "value": 62.85,
       "signal": "NEUTRAL"
     },
     "MACD": {
-      "value": -33.74,
+      "value": -39.74,
+      "signal": "SELL"
+    },
+    "MACD_Histogram": -0.18,
+    "CCI": {
+      "value": -147.35,
       "signal": "BUY"
     },
-    "MACD_Histogram": 5.78,
-    "CCI": {
-      "value": -95.63,
-      "signal": "NEUTRAL"
-    },
     "Williams_R": {
-      "value": -81.49,
+      "value": -80.87,
       "signal": "BUY"
     },
     "ROC": {
-      "value": -2.82,
+      "value": -1.97,
       "signal": "SELL"
     },
     "Momentum": {
-      "value": -95.8,
+      "value": -112.7,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 46.89,
+      "value": 46.94,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 52.42,
+      "value": 50.56,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 17.74,
+      "value": 24.41,
       "signal": "WEAK"
     },
     "SuperTrend": {
@@ -2059,76 +2059,76 @@
       "signal": "SELL"
     },
     "Parabolic_SAR": {
-      "signal": "BUY"
+      "signal": "SELL"
     },
     "Aroon": {
-      "up": 96.0,
-      "down": 84.0,
-      "signal": "NEUTRAL"
+      "up": 100.0,
+      "down": 4.0,
+      "signal": "BUY"
     },
     "EMA20": {
-      "value": 4150.88,
+      "value": 4138.91,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 4192.68,
+      "value": 4186.11,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 4154.69,
+      "value": 4152.25,
       "signal": "SELL"
     },
     "EMA200": {
-      "value": 4020.12,
+      "value": 4021.6,
       "signal": "BUY"
     },
     "SMA20": {
-      "value": 4124.16,
+      "value": 4118.66,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 4262.14,
+      "value": 4263.62,
       "signal": "SELL"
     },
     "SMA200": {
-      "value": 3978.04,
+      "value": 3980.19,
       "signal": "BUY"
     },
     "BollingerBands": {
-      "upper": 4240.79,
-      "middle": 4124.16,
-      "lower": 4007.53,
+      "upper": 4242.82,
+      "middle": 4118.66,
+      "lower": 3994.5,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 4325.71,
-      "middle": 4150.88,
-      "lower": 3976.05
+      "upper": 4315.64,
+      "middle": 4138.91,
+      "lower": 3962.18
     },
     "DonchianChannel": {
       "upper": 4289.0,
-      "lower": 3986.0
+      "lower": 3962.8
     },
     "ATR": {
-      "value": 91.41
+      "value": 94.78
     },
     "StandardDeviation": {
-      "value": 58.31
+      "value": 62.08
     },
     "OBV": {
-      "value": 9899963,
+      "value": 8570616,
       "signal": "SELL"
     },
     "CMF": {
-      "value": -0.009,
+      "value": -0.0495,
       "signal": "SELL"
     },
     "VWAP": {
-      "value": 3891.75,
+      "value": 3892.97,
       "signal": "BUY"
     },
     "EaseOfMovement": {
-      "value": -90985.9268
+      "value": -161545.1607
     }
   }
 }
