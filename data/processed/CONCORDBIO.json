@@ -1,22 +1,14 @@
 {
   "symbol": "CONCORDBIO",
-  "updated_at": "2026-06-23T13:32:18.674641",
-  "latest_price": 1317.8,
+  "updated_at": "2026-06-24T13:08:24.023814",
+  "latest_price": 1291.0,
   "final_signal": "STRONG_BUY",
   "signal_summary": {
     "buy_signals": 4,
-    "sell_signals": 0,
+    "sell_signals": 1,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-06-23",
-      "open": 1798.0,
-      "high": 1843.5999755859375,
-      "low": 1773.5999755859375,
-      "close": 1821.800048828125,
-      "volume": 238729
-    },
     {
       "time": "2025-06-24",
       "open": 1831.5999755859375,
@@ -2008,48 +2000,56 @@
       "low": 1311.5999755859375,
       "close": 1317.800048828125,
       "volume": 89340
+    },
+    {
+      "time": "2026-06-24",
+      "open": 1327.800048828125,
+      "high": 1327.800048828125,
+      "low": 1285.0,
+      "close": 1291.0,
+      "volume": 89156
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 65.14,
+      "value": 57.06,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 33.58,
-      "signal": "NEUTRAL"
-    },
-    "MACD": {
-      "value": 54.46,
+      "value": 2.16,
       "signal": "BUY"
     },
-    "MACD_Histogram": 1.92,
+    "MACD": {
+      "value": 48.99,
+      "signal": "SELL"
+    },
+    "MACD_Histogram": -2.84,
     "CCI": {
-      "value": 54.91,
+      "value": 29.81,
       "signal": "NEUTRAL"
     },
     "Williams_R": {
-      "value": -41.35,
+      "value": -53.65,
       "signal": "NEUTRAL"
     },
     "ROC": {
-      "value": 8.92,
+      "value": 7.88,
       "signal": "BUY"
     },
     "Momentum": {
-      "value": 45.6,
-      "signal": "BUY"
+      "value": -39.7,
+      "signal": "SELL"
     },
     "MFI": {
-      "value": 71.01,
+      "value": 67.25,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 39.42,
+      "value": 33.25,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 52.08,
+      "value": 38.4,
       "signal": "STRONG"
     },
     "SuperTrend": {
@@ -2059,76 +2059,76 @@
       "signal": "BUY"
     },
     "Parabolic_SAR": {
-      "signal": "BUY"
+      "signal": "SELL"
     },
     "Aroon": {
-      "up": 28.0,
-      "down": 68.0,
+      "up": 32.0,
+      "down": 72.0,
       "signal": "NEUTRAL"
     },
     "EMA20": {
-      "value": 1275.1,
+      "value": 1276.62,
       "signal": "BUY"
     },
     "EMA50": {
-      "value": 1209.72,
+      "value": 1212.9,
       "signal": "BUY"
     },
     "EMA100": {
-      "value": 1213.98,
+      "value": 1215.23,
       "signal": "BUY"
     },
     "EMA200": {
-      "value": 1311.58,
-      "signal": "BUY"
+      "value": 1307.98,
+      "signal": "SELL"
     },
     "SMA20": {
-      "value": 1251.86,
+      "value": 1261.43,
       "signal": "BUY"
     },
     "SMA50": {
-      "value": 1172.26,
+      "value": 1177.27,
       "signal": "BUY"
     },
     "SMA200": {
-      "value": 1308.77,
-      "signal": "BUY"
+      "value": 1306.74,
+      "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 1465.12,
-      "middle": 1251.86,
-      "lower": 1038.6,
+      "upper": 1463.37,
+      "middle": 1261.43,
+      "lower": 1059.49,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 1395.0,
-      "middle": 1275.1,
-      "lower": 1155.2
+      "upper": 1395.87,
+      "middle": 1276.62,
+      "lower": 1157.37
     },
     "DonchianChannel": {
       "upper": 1407.9,
       "lower": 1022.2
     },
     "ATR": {
-      "value": 51.98
+      "value": 51.14
     },
     "StandardDeviation": {
-      "value": 106.63
+      "value": 100.97
     },
     "OBV": {
-      "value": 32928957,
+      "value": 33120564,
       "signal": "SELL"
     },
     "CMF": {
-      "value": -0.1869,
+      "value": -0.1835,
       "signal": "SELL"
     },
     "VWAP": {
-      "value": 1301.3,
-      "signal": "BUY"
+      "value": 1299.46,
+      "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": 24143.4914
+      "value": -61829.9023
     }
   }
 }
