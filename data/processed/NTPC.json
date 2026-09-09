@@ -1,22 +1,14 @@
 {
   "symbol": "NTPC",
-  "updated_at": "2026-09-08T14:48:44.926870",
-  "latest_price": 330.8,
-  "final_signal": "NEUTRAL",
+  "updated_at": "2026-09-09T14:51:18.729688",
+  "latest_price": 334.5,
+  "final_signal": "SELL",
   "signal_summary": {
     "buy_signals": 2,
-    "sell_signals": 2,
+    "sell_signals": 3,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-09-08",
-      "open": 328.75,
-      "high": 330.95001220703125,
-      "low": 326.3500061035156,
-      "close": 326.70001220703125,
-      "volume": 5239184
-    },
     {
       "time": "2025-09-09",
       "open": 327.6000061035156,
@@ -2023,128 +2015,136 @@
       "high": 333.20001220703125,
       "low": 328.6499938964844,
       "close": 330.79998779296875,
-      "volume": 7349761
+      "volume": 7351373
+    },
+    {
+      "time": "2026-09-09",
+      "open": 331.1000061035156,
+      "high": 337.5,
+      "low": 330.8999938964844,
+      "close": 334.5,
+      "volume": 11790599
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 37.79,
+      "value": 44.3,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 68.74,
-      "signal": "NEUTRAL"
+      "value": 100.0,
+      "signal": "SELL"
     },
     "MACD": {
-      "value": -3.89,
+      "value": -3.45,
       "signal": "BUY"
     },
-    "MACD_Histogram": 0.21,
+    "MACD_Histogram": 0.52,
     "CCI": {
-      "value": -60.0,
+      "value": -3.87,
       "signal": "NEUTRAL"
     },
     "Williams_R": {
-      "value": -58.21,
+      "value": -42.43,
       "signal": "NEUTRAL"
     },
     "ROC": {
-      "value": -2.71,
+      "value": -1.47,
       "signal": "SELL"
     },
     "Momentum": {
-      "value": -9.05,
+      "value": -0.1,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 33.53,
+      "value": 37.73,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 59.5,
+      "value": 59.28,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 28.5,
-      "signal": "STRONG"
+      "value": 14.59,
+      "signal": "WEAK"
     },
     "SuperTrend": {
       "signal": "BUY"
     },
     "Ichimoku": {
-      "signal": "SELL"
+      "signal": "BUY"
     },
     "Parabolic_SAR": {
-      "signal": "SELL"
+      "signal": "BUY"
     },
     "Aroon": {
       "up": 100.0,
-      "down": 20.0,
+      "down": 24.0,
       "signal": "BUY"
     },
     "EMA20": {
-      "value": 334.73,
+      "value": 334.7,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 342.98,
+      "value": 342.65,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 351.47,
+      "value": 351.12,
       "signal": "SELL"
     },
     "EMA200": {
-      "value": 353.18,
+      "value": 352.79,
       "signal": "SELL"
     },
     "SMA20": {
-      "value": 334.89,
+      "value": 334.64,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 342.59,
+      "value": 342.12,
       "signal": "SELL"
     },
     "SMA200": {
-      "value": 358.19,
+      "value": 358.24,
       "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 344.34,
-      "middle": 334.89,
-      "lower": 325.45,
+      "upper": 343.86,
+      "middle": 334.64,
+      "lower": 325.43,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 346.01,
-      "middle": 334.73,
-      "lower": 323.45
+      "upper": 346.05,
+      "middle": 334.7,
+      "lower": 323.35
     },
     "DonchianChannel": {
       "upper": 344.45,
       "lower": 321.0
     },
     "ATR": {
-      "value": 5.61
+      "value": 5.72
     },
     "StandardDeviation": {
-      "value": 4.72
+      "value": 4.61
     },
     "OBV": {
-      "value": 33606679,
-      "signal": "SELL"
+      "value": 59627472,
+      "signal": "BUY"
     },
     "CMF": {
-      "value": 0.1123,
+      "value": 0.0953,
       "signal": "BUY"
     },
     "VWAP": {
-      "value": 356.3,
+      "value": 356.26,
       "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": -6.509
+      "value": -0.0055
     }
   }
 }
