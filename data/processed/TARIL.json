@@ -1,22 +1,14 @@
 {
   "symbol": "TARIL",
-  "updated_at": "2026-09-09T14:51:52.163773",
-  "latest_price": 296.9,
-  "final_signal": "NEUTRAL",
+  "updated_at": "2026-09-10T14:41:03.257879",
+  "latest_price": 289.95,
+  "final_signal": "BUY",
   "signal_summary": {
-    "buy_signals": 2,
-    "sell_signals": 2,
+    "buy_signals": 4,
+    "sell_signals": 3,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-09-09",
-      "open": 499.6499938964844,
-      "high": 499.6499938964844,
-      "low": 490.3500061035156,
-      "close": 496.3999938964844,
-      "volume": 443855
-    },
     {
       "time": "2025-09-10",
       "open": 499.0,
@@ -2023,50 +2015,58 @@
       "high": 300.5,
       "low": 295.1499938964844,
       "close": 296.8999938964844,
-      "volume": 775852
+      "volume": 775856
+    },
+    {
+      "time": "2026-09-10",
+      "open": 297.5,
+      "high": 299.25,
+      "low": 288.8500061035156,
+      "close": 289.95001220703125,
+      "volume": 1129651
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 60.61,
+      "value": 41.09,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 78.93,
-      "signal": "NEUTRAL"
-    },
-    "MACD": {
-      "value": -1.46,
+      "value": 0.0,
       "signal": "BUY"
     },
-    "MACD_Histogram": 0.08,
+    "MACD": {
+      "value": -2.21,
+      "signal": "SELL"
+    },
+    "MACD_Histogram": -0.53,
     "CCI": {
-      "value": -43.96,
-      "signal": "NEUTRAL"
+      "value": -106.28,
+      "signal": "BUY"
     },
     "Williams_R": {
-      "value": -73.38,
-      "signal": "NEUTRAL"
+      "value": -97.11,
+      "signal": "BUY"
     },
     "ROC": {
-      "value": -1.72,
+      "value": -5.81,
       "signal": "SELL"
     },
     "Momentum": {
-      "value": -7.1,
+      "value": -14.2,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 75.57,
+      "value": 69.75,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 31.85,
-      "signal": "NEUTRAL"
+      "value": 26.29,
+      "signal": "BUY"
     },
     "ADX": {
-      "value": 50.7,
-      "signal": "STRONG"
+      "value": 23.76,
+      "signal": "WEAK"
     },
     "SuperTrend": {
       "signal": "BUY"
@@ -2078,73 +2078,73 @@
       "signal": "SELL"
     },
     "Aroon": {
-      "up": 32.0,
-      "down": 60.0,
+      "up": 36.0,
+      "down": 64.0,
       "signal": "NEUTRAL"
     },
     "EMA20": {
-      "value": 301.24,
+      "value": 300.16,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 306.04,
+      "value": 305.41,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 310.15,
+      "value": 309.88,
       "signal": "SELL"
     },
     "EMA200": {
-      "value": 327.38,
+      "value": 328.58,
       "signal": "SELL"
     },
     "SMA20": {
-      "value": 300.02,
+      "value": 299.92,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 309.17,
+      "value": 307.82,
       "signal": "SELL"
     },
     "SMA200": {
-      "value": 297.41,
+      "value": 297.37,
       "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 312.59,
-      "middle": 300.02,
-      "lower": 287.45,
+      "upper": 312.78,
+      "middle": 299.92,
+      "lower": 287.05,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 319.72,
-      "middle": 301.24,
-      "lower": 282.76
+      "upper": 319.18,
+      "middle": 300.16,
+      "lower": 281.14
     },
     "DonchianChannel": {
       "upper": 326.95,
       "lower": 284.0
     },
     "ATR": {
-      "value": 9.84
+      "value": 9.23
     },
     "StandardDeviation": {
-      "value": 6.29
+      "value": 6.43
     },
     "OBV": {
-      "value": 266022311,
+      "value": 264448801,
       "signal": "SELL"
     },
     "CMF": {
-      "value": -0.3169,
+      "value": -0.3296,
       "signal": "SELL"
     },
     "VWAP": {
-      "value": 305.92,
+      "value": 305.83,
       "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": -443.9475
+      "value": -906.4604
     }
   }
 }
