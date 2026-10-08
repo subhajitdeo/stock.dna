@@ -1,30 +1,14 @@
 {
   "symbol": "BOSCHLTD",
-  "updated_at": "2026-10-07T17:33:59.032359",
-  "latest_price": 45000.0,
+  "updated_at": "2026-10-08T17:37:15.948052",
+  "latest_price": 43155.0,
   "final_signal": "BUY",
   "signal_summary": {
-    "buy_signals": 4,
+    "buy_signals": 5,
     "sell_signals": 3,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-10-06",
-      "open": 38700.0,
-      "high": 38900.0,
-      "low": 38385.0,
-      "close": 38800.0,
-      "volume": 11383
-    },
-    {
-      "time": "2025-10-07",
-      "open": 38800.0,
-      "high": 39125.0,
-      "low": 38690.0,
-      "close": 38770.0,
-      "volume": 15407
-    },
     {
       "time": "2025-10-08",
       "open": 38750.0,
@@ -2015,49 +1999,65 @@
       "high": 45360.0,
       "low": 44845.0,
       "close": 45000.0,
-      "volume": 21642
+      "volume": 21643
+    },
+    {
+      "time": "2026-10-07",
+      "open": 45000.0,
+      "high": 45000.0,
+      "low": 44305.0,
+      "close": 44410.0,
+      "volume": 21193
+    },
+    {
+      "time": "2026-10-08",
+      "open": 44410.0,
+      "high": 44450.0,
+      "low": 43000.0,
+      "close": 43155.0,
+      "volume": 21501
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 36.37,
+      "value": 31.34,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 15.9,
+      "value": 0.0,
       "signal": "BUY"
     },
     "MACD": {
-      "value": -411.44,
+      "value": -722.93,
       "signal": "SELL"
     },
-    "MACD_Histogram": -423.12,
+    "MACD_Histogram": -500.48,
     "CCI": {
-      "value": -157.96,
+      "value": -179.69,
       "signal": "BUY"
     },
     "Williams_R": {
-      "value": -86.08,
+      "value": -97.15,
       "signal": "BUY"
     },
     "ROC": {
-      "value": -4.26,
+      "value": -10.63,
       "signal": "SELL"
     },
     "Momentum": {
-      "value": -3290.0,
+      "value": -4595.0,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 34.62,
+      "value": 29.13,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 36.39,
+      "value": 38.8,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 73.86,
+      "value": 78.21,
       "signal": "STRONG"
     },
     "SuperTrend": {
@@ -2070,73 +2070,73 @@
       "signal": "SELL"
     },
     "Aroon": {
-      "up": 100.0,
-      "down": 16.0,
+      "up": 84.0,
+      "down": 4.0,
       "signal": "BUY"
     },
     "EMA20": {
-      "value": 46700.7,
+      "value": 46165.63,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 45920.71,
+      "value": 45755.31,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 43662.14,
-      "signal": "BUY"
+      "value": 43663.64,
+      "signal": "SELL"
     },
     "EMA200": {
-      "value": 41196.92,
+      "value": 41211.51,
       "signal": "BUY"
     },
     "SMA20": {
-      "value": 47247.75,
+      "value": 46731.75,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 46424.1,
+      "value": 46527.9,
       "signal": "SELL"
     },
     "SMA200": {
-      "value": 39178.2,
+      "value": 39257.72,
       "signal": "BUY"
     },
     "BollingerBands": {
-      "upper": 49769.41,
-      "middle": 47247.75,
-      "lower": 44726.09,
-      "signal": "NEUTRAL"
-    },
-    "KeltnerChannel": {
-      "upper": 48924.7,
-      "middle": 46700.7,
-      "lower": 44476.7
-    },
-    "DonchianChannel": {
-      "upper": 49100.0,
-      "lower": 44410.0
-    },
-    "ATR": {
-      "value": 1138.57
-    },
-    "StandardDeviation": {
-      "value": 1260.83
-    },
-    "OBV": {
-      "value": 1242750,
+      "upper": 49747.65,
+      "middle": 46731.75,
+      "lower": 43715.85,
       "signal": "BUY"
     },
+    "KeltnerChannel": {
+      "upper": 48437.13,
+      "middle": 46165.63,
+      "lower": 43894.13
+    },
+    "DonchianChannel": {
+      "upper": 49080.0,
+      "lower": 43000.0
+    },
+    "ATR": {
+      "value": 1130.71
+    },
+    "StandardDeviation": {
+      "value": 1507.95
+    },
+    "OBV": {
+      "value": 1234061,
+      "signal": "SELL"
+    },
     "CMF": {
-      "value": -0.1224,
+      "value": -0.3054,
       "signal": "SELL"
     },
     "VWAP": {
-      "value": 39099.03,
+      "value": 39126.14,
       "signal": "BUY"
     },
     "EaseOfMovement": {
-      "value": -1449188223.2548
+      "value": -1974883755.9616
     }
   }
 }
