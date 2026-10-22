@@ -1,22 +1,14 @@
 {
   "symbol": "CAMS",
-  "updated_at": "2026-10-21T15:40:04.209441",
-  "latest_price": 680.05,
-  "final_signal": "SELL",
+  "updated_at": "2026-10-22T15:41:43.650682",
+  "latest_price": 670.65,
+  "final_signal": "BUY",
   "signal_summary": {
-    "buy_signals": 2,
-    "sell_signals": 3,
+    "buy_signals": 4,
+    "sell_signals": 2,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-10-21",
-      "open": 768.0,
-      "high": 771.0,
-      "low": 765.6400146484375,
-      "close": 767.5999755859375,
-      "volume": 308475
-    },
     {
       "time": "2025-10-23",
       "open": 771.0,
@@ -1983,49 +1975,57 @@
       "high": 695.4000244140625,
       "low": 674.7999877929688,
       "close": 680.0499877929688,
-      "volume": 889417
+      "volume": 889488
+    },
+    {
+      "time": "2026-10-22",
+      "open": 673.0,
+      "high": 677.2999877929688,
+      "low": 663.9000244140625,
+      "close": 670.6500244140625,
+      "volume": 851588
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 54.95,
+      "value": 49.88,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 100.0,
-      "signal": "SELL"
+      "value": 77.42,
+      "signal": "NEUTRAL"
     },
     "MACD": {
-      "value": -9.19,
+      "value": -10.06,
       "signal": "BUY"
     },
-    "MACD_Histogram": 2.82,
+    "MACD_Histogram": 1.56,
     "CCI": {
-      "value": -43.77,
-      "signal": "NEUTRAL"
+      "value": -101.27,
+      "signal": "BUY"
     },
     "Williams_R": {
-      "value": -61.42,
-      "signal": "NEUTRAL"
-    },
-    "ROC": {
-      "value": 0.41,
+      "value": -80.26,
       "signal": "BUY"
     },
+    "ROC": {
+      "value": -1.93,
+      "signal": "SELL"
+    },
     "Momentum": {
-      "value": -13.85,
+      "value": -23.95,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 69.34,
+      "value": 73.53,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 43.84,
+      "value": 44.38,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 8.39,
+      "value": 0.73,
       "signal": "WEAK"
     },
     "SuperTrend": {
@@ -2035,76 +2035,76 @@
       "signal": "SELL"
     },
     "Parabolic_SAR": {
-      "signal": "BUY"
+      "signal": "SELL"
     },
     "Aroon": {
-      "up": 100.0,
-      "down": 32.0,
+      "up": 80.0,
+      "down": 36.0,
       "signal": "NEUTRAL"
     },
     "EMA20": {
-      "value": 694.59,
+      "value": 692.31,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 716.73,
+      "value": 714.92,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 733.45,
+      "value": 732.26,
       "signal": "SELL"
     },
     "EMA200": {
-      "value": 742.12,
+      "value": 742.01,
       "signal": "SELL"
     },
     "SMA20": {
-      "value": 690.27,
+      "value": 688.6,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 723.34,
+      "value": 720.97,
       "signal": "SELL"
     },
     "SMA200": {
-      "value": 736.16,
+      "value": 735.85,
       "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 721.87,
-      "middle": 690.27,
-      "lower": 658.68,
+      "upper": 720.64,
+      "middle": 688.6,
+      "lower": 656.57,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 729.46,
-      "middle": 694.59,
-      "lower": 659.73
+      "upper": 727.73,
+      "middle": 692.31,
+      "lower": 656.9
     },
     "DonchianChannel": {
       "upper": 725.05,
       "lower": 660.8
     },
     "ATR": {
-      "value": 17.14
+      "value": 17.3
     },
     "StandardDeviation": {
-      "value": 15.8
+      "value": 16.02
     },
     "OBV": {
-      "value": 38446755,
+      "value": 37286621,
       "signal": "SELL"
     },
     "CMF": {
-      "value": -0.1649,
+      "value": -0.1244,
       "signal": "SELL"
     },
     "VWAP": {
-      "value": 745.25,
+      "value": 745.04,
       "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": -6279.8493
+      "value": -7658.7837
     }
   }
 }
