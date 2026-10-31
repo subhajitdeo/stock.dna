@@ -1,22 +1,14 @@
 {
   "symbol": "IRFC",
-  "updated_at": "2026-10-30T16:51:07.117962",
-  "latest_price": 75.71,
-  "final_signal": "STRONG_SELL",
+  "updated_at": "2026-10-31T15:54:36.357497",
+  "latest_price": 73.37,
+  "final_signal": "NEUTRAL",
   "signal_summary": {
-    "buy_signals": 1,
-    "sell_signals": 4,
+    "buy_signals": 3,
+    "sell_signals": 3,
     "total_indicators": 10
   },
   "candles": [
-    {
-      "time": "2025-10-29",
-      "open": 123.12999725341797,
-      "high": 125.4000015258789,
-      "low": 122.63999938964844,
-      "close": 125.08999633789062,
-      "volume": 9132825
-    },
     {
       "time": "2025-10-30",
       "open": 125.19000244140625,
@@ -1991,49 +1983,57 @@
       "high": 76.08999633789062,
       "low": 74.44999694824219,
       "close": 75.70999908447266,
-      "volume": 7699170
+      "volume": 7701586
+    },
+    {
+      "time": "2026-10-30",
+      "open": 75.72000122070312,
+      "high": 75.75,
+      "low": 73.05000305175781,
+      "close": 73.37000274658203,
+      "volume": 7299619
     }
   ],
   "indicators": {
     "RSI": {
-      "value": 54.64,
+      "value": 46.12,
       "signal": "NEUTRAL"
     },
     "StochasticRSI": {
-      "value": 100.0,
-      "signal": "SELL"
+      "value": 39.67,
+      "signal": "NEUTRAL"
     },
     "MACD": {
-      "value": -1.44,
+      "value": -1.56,
       "signal": "SELL"
     },
-    "MACD_Histogram": -0.08,
+    "MACD_Histogram": -0.16,
     "CCI": {
-      "value": -60.64,
-      "signal": "NEUTRAL"
+      "value": -104.44,
+      "signal": "BUY"
     },
     "Williams_R": {
-      "value": -67.71,
-      "signal": "NEUTRAL"
+      "value": -96.02,
+      "signal": "BUY"
     },
     "ROC": {
-      "value": -2.31,
+      "value": -7.85,
       "signal": "SELL"
     },
     "Momentum": {
-      "value": -4.04,
+      "value": -5.53,
       "signal": "SELL"
     },
     "MFI": {
-      "value": 51.09,
+      "value": 52.08,
       "signal": "NEUTRAL"
     },
     "Ultimate_Oscillator": {
-      "value": 53.13,
+      "value": 50.27,
       "signal": "NEUTRAL"
     },
     "ADX": {
-      "value": 1.01,
+      "value": 7.93,
       "signal": "WEAK"
     },
     "SuperTrend": {
@@ -2046,73 +2046,73 @@
       "signal": "SELL"
     },
     "Aroon": {
-      "up": 80.0,
-      "down": 16.0,
+      "up": 84.0,
+      "down": 4.0,
       "signal": "BUY"
     },
     "EMA20": {
-      "value": 77.05,
+      "value": 76.7,
       "signal": "SELL"
     },
     "EMA50": {
-      "value": 80.19,
+      "value": 79.93,
       "signal": "SELL"
     },
     "EMA100": {
-      "value": 85.27,
+      "value": 85.02,
       "signal": "SELL"
     },
     "EMA200": {
-      "value": 93.69,
+      "value": 93.4,
       "signal": "SELL"
     },
     "SMA20": {
-      "value": 76.85,
+      "value": 76.56,
       "signal": "SELL"
     },
     "SMA50": {
-      "value": 80.17,
+      "value": 79.92,
       "signal": "SELL"
     },
     "SMA200": {
-      "value": 95.44,
+      "value": 95.17,
       "signal": "SELL"
     },
     "BollingerBands": {
-      "upper": 80.75,
-      "middle": 76.85,
-      "lower": 72.96,
+      "upper": 80.57,
+      "middle": 76.56,
+      "lower": 72.55,
       "signal": "NEUTRAL"
     },
     "KeltnerChannel": {
-      "upper": 81.5,
-      "middle": 77.05,
-      "lower": 72.6
+      "upper": 81.11,
+      "middle": 76.7,
+      "lower": 72.29
     },
     "DonchianChannel": {
-      "upper": 81.5,
-      "lower": 73.14
+      "upper": 81.1,
+      "lower": 73.05
     },
     "ATR": {
-      "value": 2.25
+      "value": 2.36
     },
     "StandardDeviation": {
-      "value": 1.95
+      "value": 2.0
     },
     "OBV": {
-      "value": -273151421,
-      "signal": "BUY"
-    },
-    "CMF": {
-      "value": -0.0231,
+      "value": -277735599,
       "signal": "SELL"
     },
+    "CMF": {
+      "value": 0.0288,
+      "signal": "BUY"
+    },
     "VWAP": {
-      "value": 103.31,
+      "value": 103.19,
       "signal": "SELL"
     },
     "EaseOfMovement": {
-      "value": -3.3923
+      "value": -5.23
     }
   }
 }
